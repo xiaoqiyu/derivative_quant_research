@@ -1,0 +1,25 @@
+root = true
+
+[*]
+volitility = 18
+k1 = 0.2
+k2 = 0.2
+stop_profit = 5
+stop_loss = 2
+fee = 1.51
+open_fee = 2.5
+close_t0_fee = 2.5
+start_tick = 2
+long_lots_limit = 2
+short_lots_limit = 2
+slope_upper = 1.5
+slope_lower = -1.5
+start_timestamp = 21:00:00
+end_timestamp = 14:59:30
+delay_sec = 5
+uqer_token = 6aa0df8d4eec296e0c25fac407b332449112aad6c717b1ada315560e9aa0a311
+cache_factor = 0
+ret_up_ratio = 0.0015
+ret_down_ratio = 0.001
+
+

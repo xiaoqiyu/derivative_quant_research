@@ -1,7 +1,0 @@
-trade_date,product_id,instrument_id,total_return_final,total_return_unclose,total_fee,unclosed_value,precision,long_open,short_open,correct_long_open,wrong_long_open,correct_short_open,wrong_short_open,average_holding_time,max_holding_time,min_holding_time
-2021-07-01,eg,eg2109,200.0,200.0,20.0,0.0,1.0,0.0,1.0,0.0,0.0,1.0,0.0,1149.0,1149.0,1149.0
-2021-07-02,eg,eg2109,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-inf,inf
-2021-07-01,eg,eg2109,200.0,200.0,20.0,0.0,1.0,0.0,1.0,0.0,0.0,1.0,0.0,1149.0,1149.0,1149.0
-2021-07-02,eg,eg2109,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-inf,inf
-2021-07-05,eg,eg2109,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-inf,inf
-2021-07-06,eg,eg2109,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-inf,inf

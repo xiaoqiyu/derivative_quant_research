@@ -64,9 +64,9 @@ class TransAm(nn.Module):
             mask = self._generate_square_subsequent_mask(len(src)).to(device)
             self.src_mask = mask
 
-        src = self.pos_encoder(src)
-        output = self.transformer_encoder(src, self.src_mask)
-        output = self.decoder(output)
+        src = self.pos_encoder(src) #src: 10*250*1
+        output = self.transformer_encoder(src, self.src_mask) #src: 10*250*250
+        output = self.decoder(output)  # output 10*250*250
         return output
 
     def _generate_square_subsequent_mask(self, sz):
@@ -123,11 +123,12 @@ def train(train_data):
     model.train()  # Turn on the evaluation mode
     total_loss = 0.
     start_time = time.time()
+    print(model)
 
     for batch, i in enumerate(range(0, len(train_data) - 1, batch_size)):
         data, targets = get_batch(train_data, i, batch_size)
         optimizer.zero_grad()
-        output = model(data)
+        output = model(data)  # 10*250*1
         loss = criterion(output, targets)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.7)
@@ -195,7 +196,6 @@ def forecast_seq(model, sequences):
             actual = torch.cat((actual, target[-1].view(-1).cpu()), 0)
     timed = time.time() - start_timer
     print(f"{timed} sec")
-
     return forecast_seq, actual
 
 
@@ -209,8 +209,8 @@ if __name__ == '__main__':
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
 
-    # epochs = 150  # Number of epochs
-    epochs = 5  # Number of epochs
+    epochs = 15  # Number of epochs
+    # epochs = 5  # Number of epochs
 
     for epoch in range(1, epochs + 1):
         epoch_start_time = time.time()
@@ -231,14 +231,14 @@ if __name__ == '__main__':
         scheduler.step()
 
         # test the model
-        # test_result, truth = forecast_seq(model, val_data)
+        test_result, truth = forecast_seq(model, val_data)
         # # plot the results
-        # plt.plot(truth, color='red', alpha=0.7)
-        # plt.plot(test_result, color='blue', linewidth=0.7)
-        # plt.title('Actual vs Forecast')
-        # plt.legend(['Actual', 'Forecast'])
-        # plt.xlabel('Time Steps')
-        # plt.show()
+        plt.plot(truth, color='red', alpha=0.7)
+        plt.plot(test_result, color='blue', linewidth=0.7)
+        plt.title('Actual vs Forecast')
+        plt.legend(['Actual', 'Forecast'])
+        plt.xlabel('Time Steps')
+        plt.show()
         #
         # r = np.random.randint(100000, 160000)
         # test_forecast = model_forecast(model, csum_logreturn[r: r + 10])  # random 10 sequence length

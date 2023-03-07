@@ -249,6 +249,17 @@ def main():
             print('-' * 80)
 
         scheduler.step()
+        # test the model
+        if epoch % 10 == 0:
+            test_result, truth = forecast_seq(model, val_data)
+            # plot the results
+            plt.plot(truth, color='red', alpha=0.7)
+            plt.plot(test_result, color='blue', linewidth=0.7)
+            plt.title('Actual vs Forecast')
+            plt.legend(['Actual', 'Forecast'])
+            plt.xlabel('Time Steps')
+            # plt.show()
+            plt.savefig("test_{0}.jpg".format(epoch))
 
 
 if __name__ == '__main__':

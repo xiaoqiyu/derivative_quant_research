@@ -20,6 +20,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pprint
 import configparser
+from WindPy import w
+w.start()
 
 logging.basicConfig(filename='logs/{0}.txt'.format(os.path.split(__file__)[-1].split('.')[0]), level=logging.DEBUG)
 logger = logging.getLogger()
@@ -235,15 +237,19 @@ def backtest(start_date: str = '20210707', end_date: str = '20210709', product_i
 
 
 if __name__ == "__main__":
+    w_wss_data = w.vba_wss("300866.SZ",
+                         "tot_oper_rev,oper_rev,net_profit_is,tot_assets,inventories,acct_rcv,arturndays,apturndays,invturn,invturndays,grossprofitmargin,expensetosales,cogstosales,netprofitmargin,ev,mkt_cap_ard,pe_ttm,ps_ttm,ev2_to_ebitda,val_evtoebitda2",
+                         "unit=1;rptDate=20211231;rptType=1;tradeDate=20220703")
+    print(w_wss_data)
     # data_visialize()
-    start_date = '20210701'
-    bt_start_date = '20210707'
-    end_date = '20210715'
-    product_id = 'eg'
-    # train_models(start_date=start_date, end_date=end_date, product_id=product_id)
-    stop_lst = [(10, 10)]
-    for stop_profit, stop_loss in stop_lst:
-        param_overwrite = {'stop_profit': stop_profit, 'stop_loss': stop_loss}
-        backtest(start_date=start_date, end_date=end_date, strategy_name='ClfSignal', product_id=product_id,
-                 param_overwrite=param_overwrite)
-        # data_visialize()
+    # start_date = '20210701'
+    # bt_start_date = '20210707'
+    # end_date = '20210715'
+    # product_id = 'eg'
+    # # train_models(start_date=start_date, end_date=end_date, product_id=product_id)
+    # stop_lst = [(10, 10)]
+    # for stop_profit, stop_loss in stop_lst:
+    #     param_overwrite = {'stop_profit': stop_profit, 'stop_loss': stop_loss}
+    #     backtest(start_date=start_date, end_date=end_date, strategy_name='ClfSignal', product_id=product_id,
+    #              param_overwrite=param_overwrite)
+    #     # data_visialize()

@@ -11,6 +11,7 @@ from editorconfig import get_properties, EditorConfigError
 import utils.define as define
 import utils.utils as utils
 from research.tick_models.ModelProcess import *
+from research.intraday_price_models.FactorPreprocess import *
 import logging
 import hashlib
 import time
@@ -75,6 +76,11 @@ def data_visialize(n_records=100):
     # ax2.legend(loc=0)
     # # plt.savefig('0.png')
     # plt.show()
+
+
+def feature_selection():
+    get_factor(trade_date="20210701", predict_windows=[120], lag_windows=[120], instrument_id='rb2110',
+               exchange_cd='XSGE')
 
 
 def train_models(start_date: str = '20210701', end_date: str = '20210730', product_id: str = 'rb'):
@@ -236,14 +242,16 @@ def backtest(start_date: str = '20210707', end_date: str = '20210709', product_i
 
 if __name__ == "__main__":
     # data_visialize()
-    start_date = '20210701'
-    bt_start_date = '20210707'
-    end_date = '20210715'
-    product_id = 'eg'
+    # start_date = '20210701'
+    # bt_start_date = '20210707'
+    # end_date = '20210715'
+    # product_id = 'eg'
     # train_models(start_date=start_date, end_date=end_date, product_id=product_id)
-    stop_lst = [(10, 10)]
-    for stop_profit, stop_loss in stop_lst:
-        param_overwrite = {'stop_profit': stop_profit, 'stop_loss': stop_loss}
-        backtest(start_date=start_date, end_date=end_date, strategy_name='ClfSignal', product_id=product_id,
-                 param_overwrite=param_overwrite)
-        # data_visialize()
+    # stop_lst = [(10, 10)]
+    # for stop_profit, stop_loss in stop_lst:
+    #     param_overwrite = {'stop_profit': stop_profit, 'stop_loss': stop_loss}
+    #     backtest(start_date=start_date, end_date=end_date, strategy_name='ClfSignal', product_id=product_id,
+    #              param_overwrite=param_overwrite)
+    #     # data_visialize()
+
+    feature_selection()

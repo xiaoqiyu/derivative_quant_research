@@ -374,3 +374,4 @@ def get_factor(trade_date: str = "20210701", predict_windows: list = [1200], lag
                                    'factor_{0}_{1}.csv'.format(instrument_id, trade_date.replace('-', ''))])
     tick_mkt[_factor_lst].to_csv(_factor_path, index=False)
     return tick_mkt[_factor_lst]
+

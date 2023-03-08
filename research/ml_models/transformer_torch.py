@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time    : 2022/6/13 13:24
+# @Time    : 2022/6/9 14:05
 # @Author  : rpyxqi@gmail.com
-# @Site    : 
-# @File    : ts_transformer.py
+# @Site    :
+# @File    : transformer_torch.py
 
 import torch
 import torch.nn as nn
@@ -13,18 +13,33 @@ import time
 import math
 import matplotlib.pyplot as plt
 
-input_window = 10  # number of input steps
-output_window = 1  # number of prediction steps, in this model its fixed to one
+input_window = 10
+output_window = 1
 batch_size = 250
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-df = pd.read_csv('FB_raw.csv')  # data path of facebook stock price (Apr 2019 - Nov 2020)
+df = pd.read_csv("FB_raw.csv")
 close = np.array(df['close'])
-logreturn = np.diff(np.log(close))  # Transform closing price to log returns, instead of using min-max scaler
+logreturn = np.diff(np.log(close))
+csum_logreturn = logreturn.cumsum()
 
-csum_logreturn = logreturn.cumsum()  # Cumulative sum of log returns
 
-
+#
+# fig, axs = plt.subplot(2, 1)
+# axs[0].plot(close, color='red')
+# axs[0].set_title('close price')
+# axs[0].set_ylabel('close price')
+# axs[0].set_xlable('time steps')
+#
+# axs[1].plot(csum_logreturn, color='green')
+# axs[1].set_title('cum sum of log return')
+# axs[1].set_xlable('time steps')
+# fig.tight_layout()
+# plt.plot(close)
+# plt.show()
+# plt.plot(csum_logreturn)
+# plt.show()
+# positional encoder
 class PositionalEncoding(nn.Module):
 
     def __init__(self, d_model, max_len=5000):
@@ -41,6 +56,7 @@ class PositionalEncoding(nn.Module):
         return x + self.pe[:x.size(0), :]
 
 
+# transformer model
 class TransAm(nn.Module):
     def __init__(self, feature_size=250, num_layers=1, dropout=0.1):
         super(TransAm, self).__init__()
@@ -64,19 +80,19 @@ class TransAm(nn.Module):
             mask = self._generate_square_subsequent_mask(len(src)).to(device)
             self.src_mask = mask
 
-        src = self.pos_encoder(src) #src: 10*250*1
-        output = self.transformer_encoder(src, self.src_mask) #src: 10*250*250
-        output = self.decoder(output)  # output 10*250*250
+        src = self.pos_encoder(src)
+        output = self.transformer_encoder(src, self.src_mask)
+        output = self.decoder(output)
         return output
 
     def _generate_square_subsequent_mask(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
+        src = self.pos_en
 
-    
 
-
+# window function, split data into sequence window
 def create_inout_sequences(input_data, tw):
     inout_seq = []
     L = len(input_data)
@@ -87,6 +103,7 @@ def create_inout_sequences(input_data, tw):
     return torch.FloatTensor(inout_seq)
 
 
+# split data in training and testing,prepared in windowed sequences and pass through GPU
 def get_data(data, split):
     """Split ratio of training data"""
 
@@ -111,6 +128,7 @@ def get_data(data, split):
     return train_sequence.to(device), test_data.to(device)
 
 
+# split into training batches
 def get_batch(source, i, batch_size):
     seq_len = min(batch_size, len(source) - 1 - i)
     data = source[i:i + seq_len]
@@ -119,16 +137,16 @@ def get_batch(source, i, batch_size):
     return input, target
 
 
-def train(train_data):
+# training function
+def train(train_data, model, optimizer, criterion, scheduler, epoch):
     model.train()  # Turn on the evaluation mode
     total_loss = 0.
     start_time = time.time()
-    print(model)
 
     for batch, i in enumerate(range(0, len(train_data) - 1, batch_size)):
         data, targets = get_batch(train_data, i, batch_size)
         optimizer.zero_grad()
-        output = model(data)  # 10*250*1
+        output = model(data)
         loss = criterion(output, targets)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.7)
@@ -149,7 +167,8 @@ def train(train_data):
             start_time = time.time()
 
 
-def evaluate(eval_model, data_source):
+# evaluate function for model after training
+def evaluate(eval_model, data_source, criterion):
     eval_model.eval()  # Turn on the evaluation mode
     total_loss = 0.
     eval_batch_size = 1000
@@ -161,6 +180,7 @@ def evaluate(eval_model, data_source):
     return total_loss / len(data_source)
 
 
+# Function to forecast 1 time step from window sequence
 def model_forecast(model, seqence):
     model.eval()
     total_loss = 0.
@@ -182,6 +202,7 @@ def model_forecast(model, seqence):
     return seq
 
 
+# Function to forecast entire sequence
 def forecast_seq(model, sequences):
     """Sequences data has to been windowed and passed through device"""
     start_timer = time.time()
@@ -196,28 +217,26 @@ def forecast_seq(model, sequences):
             actual = torch.cat((actual, target[-1].view(-1).cpu()), 0)
     timed = time.time() - start_timer
     print(f"{timed} sec")
+
     return forecast_seq, actual
 
 
-if __name__ == '__main__':
+def main():
     train_data, val_data = get_data(logreturn, 0.6)  # 60% train, 40% test split
     model = TransAm().to(device)
-
     criterion = nn.MSELoss()  # Loss function
     lr = 0.00005  # learning rate
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
 
-    epochs = 15  # Number of epochs
-    # epochs = 5  # Number of epochs
-
+    epochs = 150  # Number of epochs
     for epoch in range(1, epochs + 1):
         epoch_start_time = time.time()
-        train(train_data)
+        train(train_data, model, optimizer, criterion, scheduler, epoch)
 
         if (epoch % epochs == 0):  # Valid model after last training epoch
-            val_loss = evaluate(model, val_data)
+            val_loss = evaluate(model, val_data, criterion)
             print('-' * 80)
             print('| end of epoch {:3d} | time: {:5.2f}s | valid loss: {:5.7f}'.format(epoch,
                                                                                        (time.time() - epoch_start_time),
@@ -228,61 +247,22 @@ if __name__ == '__main__':
             print('-' * 80)
             print('| end of epoch {:3d} | time: {:5.2f}s'.format(epoch, (time.time() - epoch_start_time)))
             print('-' * 80)
-        scheduler.step()
 
+        scheduler.step()
         # test the model
-        test_result, truth = forecast_seq(model, val_data)
-        # # plot the results
-        plt.plot(truth, color='red', alpha=0.7)
-        plt.plot(test_result, color='blue', linewidth=0.7)
-        plt.title('Actual vs Forecast')
-        plt.legend(['Actual', 'Forecast'])
-        plt.xlabel('Time Steps')
-        plt.show()
-        #
-        # r = np.random.randint(100000, 160000)
-        # test_forecast = model_forecast(model, csum_logreturn[r: r + 10])  # random 10 sequence length
-        #
-        # print(f"forecast sequence: {test_forecast}")
-        # print(f"Actual sequence: {csum_logreturn[r: r + 11]}")
-        #
-        # torch.save(model.state_dict(), "transformer_ts.pth")
-        # model2 = TransAm()  # rename as model2
-        # model2.load_state_dict(torch.load("transformer_ts.pth"))
-        # model2.to(device)
-        #
-        # df2 = pd.read_csv('BA_raw.csv')  # Boeing Co stock
-        # close2 = df2['close'].fillna(method='ffill')
-        # close2 = np.array(close2)
-        # logreturn2 = np.diff(np.log(close2))
-        #
-        # train_data2, val_data2 = get_data(logreturn2, 0.6)
-        # test2_eval = evaluate(model2, val_data2)
-        # print(f'Test 2 loss: {test2_eval :.5f}')
-        #
-        # test_result2, truth2 = forecast_seq(model2, val_data2)
-        #
-        # plt.plot(truth2, color='red', alpha=0.7)
-        # plt.plot(test_result2, color='blue', linewidth=0.7)
-        # plt.title('Actual vs Forecast')
-        # plt.legend(['Actual', 'Forecast'])
-        # plt.xlabel('Time Steps')
-        # plt.show()
-        #
-        # df3 = pd.read_csv('JPM_raw.csv')  # JPMorgan Chase & Co stock
-        # close3 = df3['close'].fillna(method='ffill')
-        # close3 = np.array(close3)
-        # logreturn3 = np.diff(np.log(close3))
-        #
-        # train_data3, val_data3 = get_data(logreturn3, 0.6)
-        # test3_eval = evaluate(model2, val_data3)
-        # print(f'Test 3 loss: {test3_eval :.5f}')
-        #
-        # test_result3, truth3 = forecast_seq(model2, val_data3)
-        #
-        # plt.plot(truth3, color='red', alpha=0.7)
-        # plt.plot(test_result3, color='blue', linewidth=0.7)
-        # plt.title('Actual vs Forecast')
-        # plt.legend(['Actual', 'Forecast'])
-        # plt.xlabel('Time Steps')
-        # plt.show()
+        if epoch % 10 == 0:
+            test_result, truth = forecast_seq(model, val_data)
+            # plot the results
+            plt.plot(truth, color='red', alpha=0.7)
+            plt.plot(test_result, color='blue', linewidth=0.7)
+            plt.title('Actual vs Forecast')
+            plt.legend(['Actual', 'Forecast'])
+            plt.xlabel('Time Steps')
+            # plt.show()
+            plt.savefig("test_{0}.jpg".format(epoch))
+
+
+if __name__ == '__main__':
+    print('pytorch version', torch.__version__)
+    print('gpu available', torch.cuda.is_available())
+    main()

@@ -78,9 +78,9 @@ TICK_MODEL_DIR = 'tickmodels'
 DAILY_MODEL_DIR = 'daily_models'
 TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_202107'
 FACTOR_DIR = 'factors'
-CACHE_DIR = 'cache'
+CACHE_DIR = 'data'
 BT_DIR = 't0backtest'
-daily_cache_name = 'cache/future_20210101_20210804.csv'
+daily_cache_name = 'data/future_20210101_20210804.csv'
 
 MKT_MISSING_SKIP = 0.3
 

@@ -6,7 +6,6 @@
 # @File    : FactorProcess.py
 
 
-import math
 import numpy as np
 import talib as ta
 import pandas as pd
@@ -15,18 +14,18 @@ import os
 import matplotlib.pyplot as plt
 import sys
 
-_base_dir = os.path.join(os.path.abspath(os.path.join(__file__,  "../../..")))
+_base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../../..")))
 sys.path.append(_base_dir)
 
-import utils.define as define
-import utils.utils as utils
-from utils.logger import Logger
+import codes.utils.define as define
+from codes.utils import utils as utils
+from codes.utils.logger import Logger
 
 logging.basicConfig(filename='logs/{0}.txt'.format(os.path.split(__file__)[-1].split('.')[0]), level=logging.DEBUG)
 logger = logging.getLogger()
 
 log_path = os.path.abspath(
-    os.path.join(__file__, "../..", "../mi_models/data/logs/{}".format(os.path.split(__file__)[-1].strip('py'))))
+    os.path.join(__file__, "../../..", "../mi_models/data/logs/{}".format(os.path.split(__file__)[-1].strip('py'))))
 logger = Logger(log_path, 'INFO', __name__).get_log()
 
 

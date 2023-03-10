@@ -5,20 +5,12 @@
 # @Site    : 
 # @File    : ClfSignal.py
 
-import numpy as np
-import pandas as pd
-from strategy.Signal import Signal
-from strategy.Signal import SignalField
-from strategy.trade_rules import ma_rule
-from strategy.trade_rules import dual_thrust
-from strategy.trade_rules import spread_rule
+from codes.strategy.Signal import Signal
+from codes.strategy.Signal import SignalField
+from codes.strategy.trade_rules import ma_rule
+from codes.strategy.trade_rules import dual_thrust
 # from strategy.trade_rules import clf_rule
-from strategy.trade_rules import reg_rule
-import utils.define as define
-import utils.utils as utils
-from backtester.Factor import Factor
-from backtester.Position import Position
-import os
+import codes.utils.define as define
 
 
 def _get_pred(label_prob):

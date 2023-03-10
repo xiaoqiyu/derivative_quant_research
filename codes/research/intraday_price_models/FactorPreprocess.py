@@ -5,7 +5,6 @@
 # @Site    : 
 # @File    : FactorPreprocess.py
 
-import math
 import numpy as np
 import talib as ta
 import pandas as pd
@@ -13,8 +12,8 @@ import logging
 import os
 import matplotlib.pyplot as plt
 
-import utils.define as define
-import utils.utils as utils
+import codes.utils.define as define
+from codes.utils import utils as utils
 import uqer
 from editorconfig import get_properties, EditorConfigError
 

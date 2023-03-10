@@ -8,8 +8,8 @@
 import numpy as np
 import pandas
 import math
-import utils.utils as utils
-import utils.define as define
+from codes.utils import utils as utils
+import codes.utils.define as define
 import collections
 import copy
 

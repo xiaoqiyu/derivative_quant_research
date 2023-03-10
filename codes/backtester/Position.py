@@ -4,10 +4,8 @@
 # @Author  : rpyxqi@gmail.com
 # @Site    : 
 # @File    : Position.py
-import copyreg
 from collections import defaultdict
-import utils.define as define
-import copy
+import codes.utils.define as define
 
 
 class Position(object):

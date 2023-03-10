@@ -6,7 +6,7 @@
 # @File    : Signal.py
 
 import abc
-import utils.define as define
+import codes.utils.define as define
 
 
 class SignalField(object):

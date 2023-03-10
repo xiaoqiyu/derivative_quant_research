@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(__file__, "../..", "../mi_models")))
+sys.path.append(os.path.abspath(os.path.join(__file__, "../../..", "../mi_models")))
 import configparser
 import numpy as np
 import pandas as pd
@@ -12,10 +12,10 @@ import re
 from typing import List, Tuple, Union
 from datetime import time
 import datetime
-from utils.logger import Logger
+from codes.utils.logger import Logger
 
 log_path = os.path.abspath(
-    os.path.join(__file__, "../..", "../mi_models/data/logs/{}".format(os.path.split(__file__)[-1].strip('py'))))
+    os.path.join(__file__, "../../..", "../mi_models/data/logs/{}".format(os.path.split(__file__)[-1].strip('py'))))
 logger = Logger(log_path, 'INFO', __name__).get_log()
 
 

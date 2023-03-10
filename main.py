@@ -6,12 +6,7 @@
 # @File    : main.py
 
 
-from backtester.BackTester import backtesting
-from editorconfig import get_properties, EditorConfigError
-import utils.define as define
-import utils.utils as utils
-from research.tick_models.ModelProcess import *
-from research.intraday_price_models.FactorPreprocess import *
+from codes.backtester import backtesting
 import logging
 import hashlib
 import time
@@ -43,7 +38,6 @@ def data_visialize(n_records=100):
 
     # sns.pairplot(df_final_features.iloc[:,2:], height=1.5)
 
-    from random import sample
     # df0 = df[df.label_clf_1 == 0]
     # df1 = df[df.label_clf_1 == 1]
     #

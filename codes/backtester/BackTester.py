@@ -7,20 +7,16 @@
 import time
 from .Factor import Factor
 from .Position import Position
-from backtester.Account import Account
-from strategy.T0Signal import TOSignal
-from strategy.ClfSignal import ClfSignal
-from strategy.RegSignal import RegSignal
-from editorconfig import get_properties, EditorConfigError
+from codes.backtester.Account import Account
+from codes.strategy.ClfSignal import ClfSignal
 import pandas as pd
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-import hashlib
 from datetime import datetime
 import os
-import utils.utils as utils
-import utils.define as define
+from ..utils import utils as utils
+import codes.utils.define as define
 from copy import deepcopy
 import configparser
 
@@ -69,7 +65,7 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
     :param product_id: product id to be tested, lower case
     :param trade_date: backtest trade, 'yyyymmdd'
     :param signal_name: signal type
-    :param result_fname_digest:  file name to cache test result, which the digest of back test params
+    :param result_fname_digest:  file name to data test result, which the digest of back test params
     :param options: other params to be included in the back test
     :param plot_mkt: whether to plot and save jpg of the mkt and trade signal
     :return: (total return, total fee, precision, list of transaction)
@@ -102,7 +98,7 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
     for key, value in options.items():
         backtesting_config = '{0},{1}:{2}'.format(backtesting_config, key, value)
 
-    # get contract and daily cache
+    # get contract and daily data
     instrument_id_df = utils.get_instrument_ids(start_date=trade_date, end_date=trade_date, product_id=product_id)
     instrument_id, trade_date, exchange_cd = instrument_id_df.values[0]
     _mul_num = utils.get_mul_num(instrument_id=instrument_id)
@@ -362,11 +358,11 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
                                          vol=item[-1], order_type=define.SHORT_CLOSE)
 
     if options.get('cache_factor') == '1':
-        logging.info('Start cache factor')
+        logging.info('Start data factor')
         factor.cache_factor()
-        logging.info('Complete cache factor')
+        logging.info('Complete data factor')
     else:
-        logging.info('Stip cache factor')
+        logging.info('Stip data factor')
     if plot_mkt:
         _idx_lst = list(range(len(factor.last_price)))
         fig = plt.figure()

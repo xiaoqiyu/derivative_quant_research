@@ -22,7 +22,7 @@ def cache_depth_mkt():
                         'C:\projects\pycharm\option_future_research\cache\{0}\{1}.csv'.format(_tmp[-1], _tmp[0]))
         except Exception as ex:
             print(ex)
-    # os.system('rm -r C:\projects\pycharm\option_future_research\cache\\mkt_pycache')
+    # os.system('rm -r C:\projects\pycharm\option_future_research\data\\mkt_pycache')
 
 
 def prepare_test_mkt():

@@ -5,8 +5,7 @@
 # @Site    : 
 # @File    : trade_rules.py
 
-import utils.define as define
-from backtester.Factor import Factor
+from codes.backtester import Factor
 import numpy as np
 
 

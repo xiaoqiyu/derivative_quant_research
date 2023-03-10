@@ -5,14 +5,10 @@
 # @Site    : 
 # @File    : RegSignal.py
 
-import numpy as np
 import pandas as pd
-from strategy.Signal import Signal
-import utils.define as define
-import utils.utils as utils
-from backtester.Factor import Factor
-from backtester.Position import Position
-import os
+from codes.strategy.Signal import Signal
+import codes.utils.define as define
+from codes.utils import utils as utils
 
 
 class RegSignal(Signal):

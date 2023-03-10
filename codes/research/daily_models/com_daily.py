@@ -5,23 +5,16 @@
 # @Site    : 
 # @File    : com_daily.py
 
-import math
 import configparser
 import sys
 import uqer
-import datetime
 import pprint
 import pandas as pd
 import numpy as np
 from uqer import DataAPI
 import matplotlib.pyplot as plt
-import backtester.Account as Account
-import backtester.Position as Position
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn import metrics
-import utils.define as define
-import utils.utils as utils
+from codes import backtester as Account, backtester as Position
+import codes.utils.define as define
 import copy
 
 margin_overwrite = {'p': 11}

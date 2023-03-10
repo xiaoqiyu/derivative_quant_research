@@ -7,26 +7,13 @@
 
 import time
 import json
-import math
 import uqer
-import pprint
-import numpy as np
 from uqer import DataAPI
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
-from sklearn import metrics
-import utils.define as define
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import mutual_info_classif
-from sklearn.linear_model import LogisticRegression
-from scipy.stats import rankdata
-import talib as ta
+import codes.utils.define as define
 import pandas as pd
-import statsmodels.api as sm
 from editorconfig import get_properties, EditorConfigError
 import logging
 import os
-import gc
 import configparser
 import copy
 

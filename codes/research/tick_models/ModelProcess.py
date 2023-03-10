@@ -6,13 +6,11 @@
 # @File    : ModelProcess.py
 
 
-import math
 import time
 import uqer
 import pprint
 import numpy as np
 from uqer import DataAPI
-import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import ElasticNet
 from sklearn.ensemble import RandomForestRegressor
@@ -21,11 +19,6 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
-from sklearn.model_selection import cross_val_score
-from sklearn.metrics import mean_absolute_percentage_error
-from sklearn.decomposition import PCA
-from scipy.stats import rankdata
-import talib as ta
 import pandas as pd
 import statsmodels.api as sm
 from editorconfig import get_properties, EditorConfigError
@@ -33,12 +26,11 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.svm import SVR
 import logging
 import os
-import gc
 from copy import deepcopy
 
-import utils.define as define
-import utils.utils as utils
-import research.tick_models.FactorProcess as F
+import codes.utils.define as define
+from codes.utils import utils as utils
+from codes import research as F
 
 logging.basicConfig(filename='logs/{0}.txt'.format(os.path.split(__file__)[-1].split('.')[0]), level=logging.DEBUG)
 logger = logging.getLogger()
@@ -729,7 +721,7 @@ def train_model_reg_without_feature_preselect(predict_windows: list = [20],
         try:
             df_factor = pd.read_csv(_factor_path)
         except Exception as ex:
-            print('factor not cache with error:{0}'.format(ex))
+            print('factor not data with error:{0}'.format(ex))
             df_factor = F.get_factor(trade_date=date,
                                      predict_windows=predict_windows,
                                      lag_windows=lag_windows,

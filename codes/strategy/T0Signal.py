@@ -5,10 +5,10 @@
 # @Site    : 
 # @File    : T0Signal.py
 
-from strategy.Signal import Signal
-import utils.define as define
-from backtester.Factor import Factor
-from backtester.Position import Position
+from codes.strategy.Signal import Signal
+import codes.utils.define as define
+from codes.backtester import Factor
+from codes.backtester.Position import Position
 
 
 class TOSignal(Signal):

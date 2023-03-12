@@ -16,9 +16,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pprint
 import configparser
-from WindPy import w
 
-w.start()
+
 
 logging.basicConfig(filename='logs/{0}.txt'.format(os.path.split(__file__)[-1].split('.')[0]), level=logging.DEBUG)
 logger = logging.getLogger()

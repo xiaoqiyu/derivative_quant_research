@@ -31,6 +31,8 @@ selected_cols = ['InstrumentID', 'UpdateTime', 'Turnover', 'Volume', 'LastPrice'
                  'BidPrice1', 'BidVolume1']
 
 # 历史行情（csv) columns
+# ['市场代码', '合约代码', '时间', '最新', '持仓', '增仓', '成交额', '成交量', '开仓', '平仓','成交类型', '方向', '买一价',
+# '卖一价', '买一量', '卖一量']
 tb_cols = ["Exchange", "InstrumentID", "UpdateTime", "LastPrice", "OpenInterest", "InterestDiff", "Turnover",
            "Volume", "OpenVolume", "CloseVolume", "TransactionType", "Direction", "BidPrice1", "AskPrice1",
            "BidVolume1",

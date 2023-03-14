@@ -19,6 +19,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import sys
+from datetime import datetime
+from datetime import time
 
 _base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../../..")))
 sys.path.append(_base_dir)
@@ -75,8 +77,9 @@ def _feature_preporcessing(df):
 
 
 def load_features(all_features=False, security_id=None):
-    df = pd.read_csv(
-        'C:\projects\pycharm\option_future_research_private\codes\\research\data_process\\feature_sample.csv')
+    # _base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../../..")))
+    _feature = os.path.abspath(os.path.join(__file__, "../../data_process/feature_sample.csv"))
+    df = pd.read_csv(_feature)
     df = df[['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'wap_log_return']]
     df.columns = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'label']
     return df.dropna()
@@ -153,22 +156,31 @@ def get_dataloader(train_ratio=0.7, df=None):
     return train_loader, val_loader
 
 
-def prepare_ts_features(df, freq='60S', miss_threshold=0.2):
+def prepare_ts_features(df, freq='60S', missing_threshold=20):
     df['trade_date'] = [item.split(' ')[0] for item in df['UpdateTime']]
     df['time'] = [item.split(' ')[1] for item in df['UpdateTime']]
+    df.index = pd.to_datetime(df['UpdateTime'])
     df.index = pd.to_datetime(df['time'])
-    all_trade_dates = list(df['trade_date'])  # 如果不按日期分开计算的话，可能每个交易日的第一个sample是上一个交易日收盘时候的因子，不太合理
-    for d in all_trade_dates:  # TODO 优化的方法？
-        _df = df[df.trade_date == d]
-        # _labels = df[['label']].resample(freq, label='left').sum()
-        # print(_labels)
-        df_label = df[['label']].resample(freq, label='left').sum().replace(0.0, np.nan).dropna().shift(1)
-        df[['open_close_ratio', 'price_spread', 'aoi']].join(df_label)
-        from datetime import datetime
-        from datetime import time
-        # import datetime
-        # datetime.strptime('2023-01-03 09:30:30.500', '%Y-%m-%d %H:%M:%S.%f')
-        # datetime.datetime(2023, 1, 3, 9, 30, 30, 500000)
+    # TODO 1. 需要再filter 掉10：15-10：30；2.不按日处理的话，跨日的第一个sample需要去掉？不然就变成前一个交易日的收盘前的行情预测下一个交易日（夜盘）的开盘走势
+    df = pd.concat([df.loc[time(9, 30): time(11, 30)], df.loc[time(21, 0):time(23, 0)]])
+    df_label = df[['label']].resample(freq, label='left').sum().replace(0.0, np.nan).dropna().shift(1)
+    df = df[['open_close_ratio', 'price_spread', 'aoi']].join(df_label)
+    notnull_labels = [idx for idx, item in enumerate(list(df['label'].notnull())) if item]
+
+    print(df)
+
+    # all_trade_dates = sorted(list(df['trade_date']))  # 如果不按日期分开计算的话，可能每个交易日的第一个sample是上一个交易日收盘时候的因子，不太合理
+    # for d in all_trade_dates:  # TODO 优化的方法？
+    #     _df = df[df.trade_date == d]
+    #     # pd.concat([_df.loc[(time(9,0,0), time(11,30,0))],_])
+    #     # _labels = df[['label']].resample(freq, label='left').sum()
+    #     # print(_labels)
+    #     df_label = df[['label']].resample(freq, label='left').sum().replace(0.0, np.nan).dropna().shift(1)
+    #     df[['open_close_ratio', 'price_spread', 'aoi']].join(df_label)
+    #
+    #     # import datetime
+    #     # datetime.strptime('2023-01-03 09:30:30.500', '%Y-%m-%d %H:%M:%S.%f')
+    #     # datetime.datetime(2023, 1, 3, 9, 30, 30, 500000)
 
 
 # 定义LSTM的结构

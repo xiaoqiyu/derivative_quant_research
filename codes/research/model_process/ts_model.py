@@ -166,8 +166,20 @@ def prepare_ts_features(df, freq='60S', missing_threshold=20):
     df_label = df[['label']].resample(freq, label='left').sum().replace(0.0, np.nan).dropna().shift(1)
     df = df[['open_close_ratio', 'price_spread', 'aoi']].join(df_label)
     notnull_labels = [idx for idx, item in enumerate(list(df['label'].notnull())) if item]
+    left = 0
+    img = []
+    _len = len(notnull_labels)
+    _featuers = list(df[['open_close_ratio', 'price_spread', 'aoi']].values)
+    _labels = list(df['label'])
+    labels = []
+    for i in range(_len - 1):
+        right = notnull_labels[i]
+        # img.append([left, right])
+        img.append(_featuers[left:right+1])
+        labels.append(_labels[right])
+        left = right + 1
 
-    print(df)
+    print(img)
 
     # all_trade_dates = sorted(list(df['trade_date']))  # 如果不按日期分开计算的话，可能每个交易日的第一个sample是上一个交易日收盘时候的因子，不太合理
     # for d in all_trade_dates:  # TODO 优化的方法？
@@ -216,7 +228,7 @@ class lstm(nn.Module):
 def train_lstm(test_date='2019-12-02', security_id='002415.XSHE', all_features=True):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # df = load_features(all_features=all_features, security_id=security_id)
-    df = load_features()
+    df = load_features()[['open_close_ratio', 'price_spread', 'aoi', 'label']]
     # train_val_df = df[df.dataDate < test_date]
     # test_df = df[df.dataDate == test_date]
 
@@ -363,14 +375,14 @@ def predict_with_lstm(date='2019-12-02', inputs=None, predict_sample={'399005.XS
 '''
 
 if __name__ == '__main__':
-    df = load_features()
-    prepare_ts_features(df=df, freq='60S', miss_threshold=0.2)
+    # df = load_features()
+    # prepare_ts_features(df=df, freq='60S', missing_threshold=20)
     # df = df.dropna()
 
     # print(df)
     # load_features(all_features=True, security_id='000006.XSHE')
     # get_dataloader(train_ratio=0.7, df=df)
-    # train_lstm(test_date='2019-03-29', security_id='000006.XSHE', all_features=True)
+    train_lstm(test_date='2019-03-29', security_id='000006.XSHE', all_features=True)
     # x = np.random.random(60 * 49).reshape(3, 20, 49)
     # print(predict_with_lstm(x))
     # import pprint

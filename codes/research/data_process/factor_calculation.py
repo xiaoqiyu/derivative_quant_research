@@ -196,11 +196,11 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, product_id: str = 
                             test_start_date: str = '',
                             test_end_date: str = ''):
     # TODO read cached features for testing
-    # df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=train_start_date,
-    #                             end_date=test_end_date)
+    df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=train_start_date,
+                                end_date=test_end_date)
 
     # read feature from cache for testing
-    df = pd.read_csv(os.path.abspath(os.path.join(__file__, "../feature_sample.csv")))
+    # df = pd.read_csv(os.path.abspath(os.path.join(__file__, "../feature_sample.csv")))
 
     # FIXME hardcode for testing features
     df = df[TEST_FEATURES]
@@ -255,13 +255,18 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
     _len = len(notnull_labels)
     _featuers = list(df.values)
     _index = list(df.index)
+    ab_cnt = 0
     for i in range(1, _len):
         right = notnull_labels[i]
-        _len = right - left
-        if SEQUENCE - _len > missing_threshold:
+        s_len = right - left
+        if SEQUENCE - s_len > missing_threshold:
             continue
         _sample = _featuers[left:right]
-        for idx in range(SEQUENCE - _len):
+        # FIXME check issue here......
+        if len(_sample) > SEQUENCE:
+            ab_cnt += 1
+            continue
+        for idx in range(SEQUENCE - s_len):
             # TODO padding here, but when calculate the loss, we dnt handle all the time step, and missing timestaop
             # TODO  is controled, so here not calling pack_padded_sequence first
             _row = [0.0] * INPUT_SIZE
@@ -294,11 +299,14 @@ def feature_resample(df: pd.DataFrame = None, freq: str = '60S', datetime_col: s
 
 
 if __name__ == '__main__':
-    # uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
-    # data_fetch = DataFetcher(uqer_client)
+    uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
+    data_fetch = DataFetcher(uqer_client)
     # df_features = calculate_raw_features(data_fetch=data_fetch, product_id='rb', start_date='20210704',
     #                                      end_date='20210705')
     # df_features.to_csv('feature_sample.csv')
     # df_features = pd.read_csv('feature_sample.csv')
-    ret = gen_train_test_features()
+    gen_train_test_features(data_fetcher=data_fetch, product_id='rb', train_start_date='2021-07-05',
+                            train_end_date='2021-07-08',
+                            test_start_date='2021-07-09', test_end_date='2021-07-09')
+    # ret = gen_train_test_features()
     # print(df_features.shape)

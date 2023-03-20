@@ -7,7 +7,10 @@
 
 
 import os
+import torch
+import copy
 import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
 import sys
 import numpy as np
 import pandas as pd
@@ -22,6 +25,7 @@ sys.path.append(_base_dir)
 
 from codes.research.data_process.data_fetcher import DataFetcher
 from codes.utils.utils import get_mul_num
+from codes.utils.define import *
 
 
 def cal_oir(bid_price: list = [], bid_vol: list = [], ask_price: list = [], ask_vol: list = [],
@@ -182,6 +186,95 @@ def calculate_raw_features(data_fetch: DataFetcher = None, product_id: str = '',
     return tick_mkt
 
 
+def cal_derived_featuers():
+    # calculate the derived features on cross-section level and time series level(by lag windows)
+    pass
+
+
+def gen_train_test_features(data_fetcher: DataFetcher = None, product_id: str = '', train_start_date: str = '',
+                            train_end_date: str = '2021-07-05',
+                            test_start_date: str = '',
+                            test_end_date: str = ''):
+    # TODO read cached features for testing
+    # df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=train_start_date,
+    #                             end_date=test_end_date)
+
+    # read feature from cache for testing
+    df = pd.read_csv(os.path.abspath(os.path.join(__file__, "../feature_sample.csv")))
+
+    # FIXME hardcode for testing features
+    df = df[TEST_FEATURES]
+    df.columns = RENAME_FEATURES
+    df = df.dropna()
+
+    train_end_dt_str = '{0} 14:00:00'.format(train_end_date)
+    train_df = df[df.UpdateTime <= train_end_dt_str]
+    test_df = df[df.UpdateTime > train_end_dt_str]
+
+    train_data_loader = get_dataloader(df=train_df, freq='60S', missing_threshold=20, dt_col_name='UpdateTime',
+                                       if_filtered=True, if_train=True)
+    # FIXME remove the pass param train_df, for testing only
+    test_data_loader = get_dataloader(df=test_df, freq='60S', missing_threshold=20, dt_col_name='UpdateTime',
+                                      if_filtered=True, if_train=True)
+    return train_data_loader, test_data_loader
+
+
+def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_name: str = 'UpdateTime',
+                   if_filtered: bool = True, if_train: bool = True):
+    '''
+    pass in dataframe, and return dataloader,padding to SEQUENCE
+    :param df:
+    :param freq:
+    :param missing_threshold:
+    :param dt_col_name:
+    :param if_filtered:
+    :param if_train:
+    :return:
+    '''
+    cols = list(df.columns)
+    if dt_col_name not in cols or LABEL not in cols:
+        raise ValueError("passed features missing datetime col or label column:{0}".format(cols))
+    df.index = pd.to_datetime(df['UpdateTime'])
+    # df.index = pd.to_datetime(df['time'])
+    # TODO 1. 需要再filter 掉10：15-10：30；2.不按日处理的话，跨日的第一个sample需要去掉？不然就变成前一个交易日的收盘前的行情预测下一个交易日（夜盘）的开盘走势
+    if if_filtered:
+        df = pd.concat([df.loc[time(9, 30): time(11, 30)], df.loc[time(21, 0):time(23, 0)]])
+    # TODO standardize
+    if if_train:
+        pass  # fit and transform
+    else:
+        pass  # load model and transform
+    df_label = df[[LABEL]].resample(freq, label='left').sum().replace(0.0, np.nan).dropna()
+    selected_cols = copy.deepcopy(cols)
+    selected_cols.remove(LABEL)
+    selected_cols.remove(dt_col_name)
+    df = df[selected_cols].join(df_label)
+    notnull_labels = [idx for idx, item in enumerate(list(df[LABEL].notnull())) if item]
+    left = notnull_labels[0]
+    img = []
+    _len = len(notnull_labels)
+    _featuers = list(df.values)
+    _index = list(df.index)
+    for i in range(1, _len):
+        right = notnull_labels[i]
+        _len = right - left
+        if SEQUENCE - _len > missing_threshold:
+            continue
+        _sample = _featuers[left:right]
+        for idx in range(SEQUENCE - _len):
+            # TODO padding here, but when calculate the loss, we dnt handle all the time step, and missing timestaop
+            # TODO  is controled, so here not calling pack_padded_sequence first
+            _row = [0.0] * INPUT_SIZE
+            _row.append(np.nan)
+            _sample.append(_row)
+        img.append(_sample)
+        # print(left, right - 1, _index[left], _index[right - 1], len(_sample))
+        left = right
+    _tensor = torch.Tensor(np.array(img))
+    _data_loader = DataLoader(_tensor, batch_size=BATCH_SIZE, shuffle=False, drop_last=True)
+    return _data_loader
+
+
 def feature_resample(df: pd.DataFrame = None, freq: str = '60S', datetime_col: str = ''):
     df.index = pd.to_datetime(df['UpdateTime'])
     # df['trade_date'] = [item.split(' ')[0] for item in df['UpdateTime']]
@@ -201,11 +294,11 @@ def feature_resample(df: pd.DataFrame = None, freq: str = '60S', datetime_col: s
 
 
 if __name__ == '__main__':
-    uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
+    # uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     # data_fetch = DataFetcher(uqer_client)
     # df_features = calculate_raw_features(data_fetch=data_fetch, product_id='rb', start_date='20210704',
     #                                      end_date='20210705')
     # df_features.to_csv('feature_sample.csv')
-    df_features = pd.read_csv('feature_sample.csv')
-    feature_resample(df=df_features, freq='300S')
+    # df_features = pd.read_csv('feature_sample.csv')
+    ret = gen_train_test_features()
     # print(df_features.shape)

@@ -27,11 +27,11 @@ import numpy as np
 # c0 = torch.randn(2, 3, 20)
 # output, (hn, cn) = rnn(input, (h0, c0))
 
-a = torch.tensor([1, 2, 3])
-b = torch.tensor([4, 5])
-c = torch.tensor([6])
-output = pack_sequence([a, b, c])
-print(output)
+# a = torch.tensor([1, 2, 3])
+# b = torch.tensor([4, 5])
+# c = torch.tensor([6])
+# output = pack_sequence([a, b, c])
+# print(output)
 
 
 # import torch
@@ -82,3 +82,71 @@ print(output)
 # print('a:', a)
 # print('b:', b)
 # print('c:', c)
+
+# batch_size = 3
+# max_len = 6
+# embedding_size = 8
+# hidden_size = 16
+# vocal_size = 5
+#
+# input_seq = [[3, 5, 12, 7, 2], [4, 11, 14], [18, 7, 3, 8, 5, 4]]
+# lengths = [5, 3, 6]
+# embedding = torch.nn.Embedding(vocal_size, embedding_size, padding_idx=0)
+# gru = torch.nn.GRU(2, hidden_size)
+#
+# input_seq = sorted(input_seq, key=lambda tp: len(tp), reverse=True)
+# lengths = sorted(lengths, key=lambda tp: tp, reverse=True)
+#
+# PAD_TOKEN = 0
+#
+#
+# def pad_seq(seq, seq_len, max_len):
+#     seq = seq
+#     seq += [PAD_TOKEN for _ in range(max_len - seq_len)]
+#     return seq
+#
+#
+# pad_seqs = []
+# for i, j in zip(input_seq, lengths):
+#     pad_seqs.append(pad_seq(i, len(i), max_len))
+#
+# pad_seqs = [[[1,2],[3,4],[6,7]],
+#             [[2,3,],[4,5],[0,0]]]
+# pad_seqs = torch.tensor(pad_seqs)
+# print(pad_seqs.shape)
+# # embeded = embedding(pad_seqs)
+# lengths = [3,2]
+# pack = torch.nn.utils.rnn.pack_padded_sequence(pad_seqs, lengths, batch_first=True)
+# print(pack.data)
+#
+# pad_outputs, _=gru(pack)
+# print(pad_outputs)
+#
+# # unpack=torch.nn.utils.rnn.pad_packed_sequence(pack, batch_first=True)
+# # print(unpack)
+
+
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+from torch.nn import utils as nn_utils
+
+batch_size = 2
+max_lenght = 2
+hidden_size = 2
+n_layers = 1
+tensor_in = torch.FloatTensor([[1, 2, 3], [1, 0, 0]]).resize_(2, 3, 1)
+tensor_in = Variable(tensor_in)
+seq_lengths = [3, 1]
+
+pack = nn_utils.rnn.pack_padded_sequence(tensor_in, seq_lengths, batch_first=True)
+print('packed', pack)
+
+rnn = nn.RNN(1, hidden_size, n_layers, batch_first=True)
+h0 = Variable(torch.randn(n_layers, batch_size, hidden_size))
+
+out, _ = rnn(pack, h0)
+print('out', out)
+
+unpacked = nn_utils.rnn.pad_packed_sequence(out)
+print('unpacked', unpacked)

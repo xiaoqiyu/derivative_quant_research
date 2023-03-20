@@ -5,7 +5,7 @@
 # @Site    : 
 # @File    : define.py
 
-
+# strategy constants
 NO_SIGNAL = -1
 LONG_OPEN = 0
 LONG_CLOSE = 1
@@ -18,6 +18,27 @@ PLT_START = 3
 PLT_END = -10
 TICK_SIZE = 41400
 TICK = 1
+
+# model constants
+# 定义常量
+# INPUT_SIZE = 49  # 定义输入的特征数
+INPUT_SIZE = 3  # 定义输入的特征数
+HIDDEN_SIZE = 32  # 定义一个LSTM单元有多少个神经元
+BATCH_SIZE = 32  # batch
+EPOCH = 3  # 学习次数
+LR = 0.001  # 学习率
+SEC_INTERVAL = 60
+SEQUENCE = SEC_INTERVAL * 2  # 步长，一般用不上，写出来就是给自己看的
+DROP_RATE = 0.2  # drop out概率
+LAYERS = 4  # 有多少隐层，一个隐层一般放一个LSTM单元
+MODEL = 'LSTM'  # 模型名字
+# the valid criterier could be cross_entropy_loss or accuracy, this only applies for valid, not for training
+VALID_CRITERIER = 'accuracy'
+NUM_LABEL = 3
+LABEL = 'label'
+TEST_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'wap_log_return']
+RENAME_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'label']
+DT_COL_NAME = 'UpdateTime'
 
 cols = ["InstrumentID", "LastPrice", "OpenPrice", "HighestPrice", "LowestPrice", "Volume", "Turnover", "OpenInterest",
         "UpperLimitPrice", "LowerLimitPrice", "UpdateTime",

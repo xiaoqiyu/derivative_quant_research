@@ -5,8 +5,5 @@
 # @Site    : 
 # @File    : preprocessing.py
 
-import pandas as pd
 
 
-def resample(df):
-    pass

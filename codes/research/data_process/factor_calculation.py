@@ -191,8 +191,9 @@ def cal_derived_featuers():
     pass
 
 
-def gen_train_test_features(data_fetcher: DataFetcher = None, product_id: str = '', train_start_date: str = '',
-                            train_end_date: str = '2021-07-05',
+def gen_train_test_features(data_fetcher: DataFetcher = None, product_id: str = '', freq: str = '60S',
+                            missing_threshold: int = 20,
+                            train_start_date: str = '', train_end_date: str = '2021-07-05',
                             test_start_date: str = '',
                             test_end_date: str = ''):
     # TODO read cached features for testing
@@ -211,16 +212,18 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, product_id: str = 
     train_df = df[df.UpdateTime <= train_end_dt_str]
     test_df = df[df.UpdateTime > train_end_dt_str]
 
-    train_data_loader = get_dataloader(df=train_df, freq='60S', missing_threshold=20, dt_col_name='UpdateTime',
-                                       if_filtered=True, if_train=True)
+    train_data_loader, bins = get_dataloader(df=train_df, freq=freq, missing_threshold=missing_threshold,
+                                             dt_col_name='UpdateTime',
+                                             if_filtered=True, if_train=True, bins=None)
     # FIXME remove the pass param train_df, for testing only
-    test_data_loader = get_dataloader(df=test_df, freq='60S', missing_threshold=20, dt_col_name='UpdateTime',
-                                      if_filtered=True, if_train=True)
+    test_data_loader, bins = get_dataloader(df=test_df, freq=freq, missing_threshold=missing_threshold,
+                                            dt_col_name='UpdateTime',
+                                            if_filtered=True, if_train=True, bins=bins)
     return train_data_loader, test_data_loader
 
 
 def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_name: str = 'UpdateTime',
-                   if_filtered: bool = True, if_train: bool = True):
+                   if_filtered: bool = True, if_train: bool = True, bins=None):
     '''
     pass in dataframe, and return dataloader,padding to SEQUENCE
     :param df:
@@ -239,30 +242,34 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
     # TODO 1. 需要再filter 掉10：15-10：30；2.不按日处理的话，跨日的第一个sample需要去掉？不然就变成前一个交易日的收盘前的行情预测下一个交易日（夜盘）的开盘走势
     if if_filtered:
         df = pd.concat([df.loc[time(9, 30): time(11, 30)], df.loc[time(21, 0):time(23, 0)]])
+
+    df_label = df[[LABEL]].resample(freq, label='left').sum().replace(0.0, np.nan).dropna()
+
     # TODO standardize
     if if_train:
-        pass  # fit and transform
+        df_label[LABEL], bins = pd.qcut(df_label['label'], q=3, labels=[0, 1, 2], retbins=True)
     else:
-        pass  # load model and transform
-    df_label = df[[LABEL]].resample(freq, label='left').sum().replace(0.0, np.nan).dropna()
+        df_label[LABEL], bins = pd.cut(df_label['label'], bins=bins, labels=[0, 1, 2], retbins=True)
+
     selected_cols = copy.deepcopy(cols)
     selected_cols.remove(LABEL)
     selected_cols.remove(dt_col_name)
     df = df[selected_cols].join(df_label)
     notnull_labels = [idx for idx, item in enumerate(list(df[LABEL].notnull())) if item]
-    left = notnull_labels[0]
     img = []
     _len = len(notnull_labels)
+
+    # label, bins = pd.qcut(df_train['Q_ADV'], q=500, labels=list(range(500)), retbins=True)
+
     _featuers = list(df.values)
     _index = list(df.index)
     ab_cnt = 0
     for i in range(1, _len):
-        right = notnull_labels[i]
+        left, right = notnull_labels[i - 1], notnull_labels[i]
         s_len = right - left
         if SEQUENCE - s_len > missing_threshold:
             continue
         _sample = _featuers[left:right]
-        # FIXME check issue here......
         if len(_sample) > SEQUENCE:
             ab_cnt += 1
             continue
@@ -273,11 +280,9 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
             _row.append(np.nan)
             _sample.append(_row)
         img.append(_sample)
-        # print(left, right - 1, _index[left], _index[right - 1], len(_sample))
-        left = right
     _tensor = torch.Tensor(np.array(img))
     _data_loader = DataLoader(_tensor, batch_size=BATCH_SIZE, shuffle=False, drop_last=True)
-    return _data_loader
+    return _data_loader, bins
 
 
 def feature_resample(df: pd.DataFrame = None, freq: str = '60S', datetime_col: str = ''):
@@ -305,8 +310,12 @@ if __name__ == '__main__':
     #                                      end_date='20210705')
     # df_features.to_csv('feature_sample.csv')
     # df_features = pd.read_csv('feature_sample.csv')
-    gen_train_test_features(data_fetcher=data_fetch, product_id='rb', train_start_date='2021-07-05',
-                            train_end_date='2021-07-08',
-                            test_start_date='2021-07-09', test_end_date='2021-07-09')
+    train_data_loader, test_data_loader = gen_train_test_features(data_fetcher=data_fetch, product_id='rb', freq='60S',
+                                                                  missing_threshold=20,
+                                                                  train_start_date='2021-07-05',
+                                                                  train_end_date='2021-07-08',
+                                                                  test_start_date='2021-07-09',
+                                                                  test_end_date='2021-07-09')
+    print(train_data_loader.dataset.shape)
     # ret = gen_train_test_features()
     # print(df_features.shape)

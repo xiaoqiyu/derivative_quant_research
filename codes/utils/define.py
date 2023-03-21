@@ -25,7 +25,7 @@ TICK = 1
 INPUT_SIZE = 3  # 定义输入的特征数
 HIDDEN_SIZE = 32  # 定义一个LSTM单元有多少个神经元
 BATCH_SIZE = 32  # batch
-EPOCH = 3  # 学习次数
+EPOCH = 1  # 学习次数
 LR = 0.001  # 学习率
 SEC_INTERVAL = 60
 SEQUENCE = SEC_INTERVAL * 2  # 步长，一般用不上，写出来就是给自己看的
@@ -33,7 +33,7 @@ DROP_RATE = 0.2  # drop out概率
 LAYERS = 4  # 有多少隐层，一个隐层一般放一个LSTM单元
 MODEL = 'LSTM'  # 模型名字
 # the valid criterier could be cross_entropy_loss or accuracy, this only applies for valid, not for training
-VALID_CRITERIER = 'accuracy'
+VALID_CRITERIER = 'cross_entropy_loss'
 NUM_LABEL = 3
 LABEL = 'label'
 TEST_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'wap_log_return']

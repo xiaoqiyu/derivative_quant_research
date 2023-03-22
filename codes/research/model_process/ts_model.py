@@ -20,6 +20,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import sys
+import pickle
 from datetime import datetime
 from datetime import time
 
@@ -37,7 +38,60 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 logger = Logger().get_log()
 
 
-def train_lstm(data_fetch=None, product_id='rb'):
+class ParamModel(object):
+    def __init__(self, model_path=''):
+        self._path = model_path
+        self.std_model = None
+        self.bins = None
+
+    def update_model(self, std_model=None, bins=None):
+        if std_model is not None:
+            self.std_model = std_model
+        if bins is not None:
+            self.bins = bins
+
+    def dump_model(self, model_path=''):
+        if model_path:
+            self._path = model_path
+        with open(self._path, 'wb') as fout:
+            pickle.dump(self, fout)
+
+    def load_model(self, model_path=''):
+        if model_path:
+            self._path = model_path
+        with open(self._path, 'rb') as fin:
+            return pickle.load(fin)
+
+
+class TSModel(object):
+    def __init__(self):
+        self.param_model = ParamModel()
+
+    def save_torch_checkpoint(self, epoch, model, optimizer, loss, path):  # path convension is .tar
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+        }, path)
+
+    def load_torch_checkpoint(self):
+        # model = TheModelClass(*args, **kwargs)
+        # optimizer = TheOptimizerClass(*args, **kwargs)
+        #
+        # checkpoint = torch.load(PATH)
+        # model.load_state_dict(checkpoint['model_state_dict'])
+        # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # epoch = checkpoint['epoch']
+        # loss = checkpoint['loss']
+        #
+        # model.eval()
+        # # - or -
+        # model.train()
+        print('check')
+
+
+def train_model(data_fetch=None, product_id='rb'):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     rnn = lstm().to(device)  # 使用GPU或CPU
     optimizer = torch.optim.Adam(rnn.parameters(), lr=LR)  # optimize all rnn parameters

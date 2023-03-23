@@ -42,7 +42,8 @@ class DataFetcher(object):
         df_dates = DataAPI.TradeCalGet(exchangeCD='XSHG', beginDate=start_date, endDate=end_date, isOpen='1',
                                        pandas='1')
         t_dates = list(set(df_dates['calendarDate']))
-        return sorted([item.replace('-', '') for item in t_dates])
+        return sorted(t_dates)
+        # return sorted([item.replace('-', '') for item in t_dates])
 
     def get_instrument_mkt(self, product_ids: list = [], start_date: str = '', end_date: str = ''):
         df = DataAPI.MktFutdGet(endDate=end_date, beginDate=start_date, pandas="1")
@@ -76,6 +77,7 @@ class DataFetcher(object):
         :return:
         '''
         all_trading_dates = self.get_all_trade_dates(start_date=start_date, end_date=end_date)
+        all_trading_dates = sorted([item.replace('-', '') for item in all_trading_dates])
         product_ids = [item.upper() for item in product_ids]
         if instrument_ids:
             df_instruments = self.instrument_cache.loc[

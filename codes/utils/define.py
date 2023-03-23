@@ -39,6 +39,8 @@ TEST_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'wap_l
 RENAME_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'label']
 DT_COL_NAME = 'UpdateTime'
 MISSING_THRESHOLD = 20  # 在每个时间序列样本中，如果确实的时间步数据大于该参数，则抛弃这个样本，跟SEQUENCE有关
+EPOCH_DAYS = 10
+TRAIN_RATIO = 0.7
 
 cols = ["InstrumentID", "LastPrice", "OpenPrice", "HighestPrice", "LowestPrice", "Volume", "Turnover", "OpenInterest",
         "UpperLimitPrice", "LowerLimitPrice", "UpdateTime",
@@ -99,8 +101,8 @@ CONF_FILE_NAME = '.editorconfig'
 STRATEGY_CONF_NAME = 'strategy.ini'
 TICK_MODEL_DIR = 'tickmodels'
 DAILY_MODEL_DIR = 'daily_models'
-TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_202107'
-# TICK_MKT_DIR = 'G:\\future\FutAC_TickKZ_PanKou_Daily_202107'
+# TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_202107'
+TICK_MKT_DIR = 'G:\\future\FutAC_TickKZ_PanKou_Daily_202107'
 FACTOR_DIR = 'factors'
 CACHE_DIR = 'data'
 BT_DIR = 't0backtest'

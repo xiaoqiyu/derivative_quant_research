@@ -9,7 +9,6 @@
 import os
 import torch
 import copy
-import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import sys
 import numpy as np
@@ -196,7 +195,8 @@ def cal_derived_featuers():
 @timeit
 def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, product_id: str = '', freq: str = '60S',
                             missing_threshold: int = 20,
-                            train_start_date: str = '', train_end_date: str = '2021-07-05',
+                            train_start_date: str = '',
+                            train_end_date: str = '2021-07-05',
                             test_start_date: str = '',
                             test_end_date: str = ''):
     df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=train_start_date,
@@ -304,24 +304,6 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
     _tensor = torch.Tensor(np.array(img))
     _data_loader = DataLoader(_tensor, batch_size=BATCH_SIZE, shuffle=False, drop_last=True)
     return _data_loader, bins
-
-
-def feature_resample(df: pd.DataFrame = None, freq: str = '60S', datetime_col: str = ''):
-    df.index = pd.to_datetime(df['UpdateTime'])
-    # df['trade_date'] = [item.split(' ')[0] for item in df['UpdateTime']]
-    # df['time'] = [item.split(' ')[1] for item in df['UpdateTime']]
-    _labels = df[['wap_log_return']].resample(freq, label='left').sum()
-    # df = df.set_index(datetime_col).resample(freq)
-    return df
-    # df.resample(freq)
-    # .apply(
-    #     {"TRADE_PRICE": "ohlc", "TRADE_QTY": "sum", "TRADE_AMOUNT": "sum", "BS_VOL": "sum"}
-    # )
-    # .dropna()
-    # .shift(1)
-    # .dropna()
-    # .droplevel(level=0, axis=1)
-    # .rename(columns={"TRADE_QTY": "vol", "TRADE_AMOUNT": "amount", "BS_VOL": "bs_vol"})
 
 
 if __name__ == '__main__':

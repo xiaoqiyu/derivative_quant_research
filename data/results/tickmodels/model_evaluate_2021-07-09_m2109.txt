@@ -1,2 +1,0 @@
-rmse:0.0002598201901895806, r2:0.22223369445779162, date:2021-07-09,predict windows:[10, 20], lag windows:[10, 60], instrument_id:m2109
-rmse:0.0002598201901895806, r2:0.22223369445779162, date:2021-07-09,predict windows:[10, 20], lag windows:[10, 60], instrument_id:m2109

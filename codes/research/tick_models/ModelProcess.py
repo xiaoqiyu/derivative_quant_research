@@ -278,7 +278,7 @@ def train_model_reg_with_feature_preselect(predict_windows: list = [20],
     cv_results = cross_validate(reg_model, final_df_factor[top_feature_lst], final_df_factor['label_cumsum'], cv=3,
                                 n_jobs=3,
                                 scoring=('r2', 'neg_mean_absolute_percentage_error', 'neg_mean_squared_error'))
-    print('train results:', cv_results)
+    print('train models:', cv_results)
 
     reg_model.fit(final_df_factor[top_feature_lst], final_df_factor[define.LABEL_NAME])
     # print('intercept:', lin_reg_model.intercept_)
@@ -791,7 +791,7 @@ def train_model_reg_without_feature_preselect(predict_windows: list = [20],
     cv_results = cross_validate(reg_model, final_df_factor[selected_cols], final_df_factor[define.LABEL_NAME], cv=3,
                                 n_jobs=3,
                                 scoring=('r2', 'neg_mean_squared_error'))
-    print('train results:', cv_results)
+    print('train models:', cv_results)
 
     reg_model.fit(final_df_factor[selected_cols], final_df_factor[define.LABEL_NAME])
 

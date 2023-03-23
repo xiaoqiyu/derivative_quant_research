@@ -102,8 +102,8 @@ def model_process(predict_windows=40, lag_windows=20):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=None)
 
     with open('model_evaluation.txt', 'a') as f:
-        print('Test results for pred_win:{0}, lag_win:{1}'.format(predict_windows, lag_windows))
-        f.write('Test results for pred_win:{0}, lag_win:{1}\n'.format(predict_windows, lag_windows))
+        print('Test models for pred_win:{0}, lag_win:{1}'.format(predict_windows, lag_windows))
+        f.write('Test models for pred_win:{0}, lag_win:{1}\n'.format(predict_windows, lag_windows))
         lin_reg_model = LinearRegression()
         lin_reg_model.fit(X_train, y_train)
         print('intercept:', lin_reg_model.intercept_)

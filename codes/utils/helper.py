@@ -1,7 +1,8 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(__file__, "../../..", "../mi_models")))
+_base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../..")))
+sys.path.append(_base_dir)
 import configparser
 import numpy as np
 import pandas as pd
@@ -12,11 +13,11 @@ import re
 from typing import List, Tuple, Union
 from datetime import time
 import datetime
+import time as time_
 from codes.utils.logger import Logger
 
-log_path = os.path.abspath(
-    os.path.join(__file__, "../../..", "../mi_models/data/logs/{}".format(os.path.split(__file__)[-1].strip('py'))))
-logger = Logger(log_path, 'INFO', __name__).get_log()
+_log_path = os.path.join(_base_dir, 'data\logs\{0}'.format(os.path.split(__file__)[-1].strip('.py')))
+logger = Logger(_log_path, 'INFO', __name__).get_log()
 
 
 def get_config(overwrite_config_path=None):
@@ -437,6 +438,16 @@ def load_data(
     return df_result
 
 
+def timeit(func):
+    def timed(*args, **kwargs):
+        ts = time_.time()
+        result = func(*args, **kwargs)
+        te = time_.time()
+        # print('%r (%r, %r) %2.2f sec' % (func.__name__, args, kwargs, te - ts))
+        logger.info('%r  %2.2f sec' % (func.__name__,  te - ts))
+        return result
+
+    return timed
 
 
 

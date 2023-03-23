@@ -252,7 +252,7 @@ def main():
         # test the model
         if epoch % 10 == 0:
             test_result, truth = forecast_seq(model, val_data)
-            # plot the results
+            # plot the models
             plt.plot(truth, color='red', alpha=0.7)
             plt.plot(test_result, color='blue', linewidth=0.7)
             plt.title('Actual vs Forecast')

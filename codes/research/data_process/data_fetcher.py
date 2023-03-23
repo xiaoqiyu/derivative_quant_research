@@ -83,7 +83,6 @@ class DataFetcher(object):
         else:
             df_instruments = self.instrument_cache.loc[
                 (item in product_ids for item in self.instrument_cache['contractObject'])]
-        # df_instruments = self.instrument_cache[self.instrument_cache.contractObject == product_id.upper()]
         if main_con_flag:
             df_instruments = df_instruments[df_instruments.mainCon == 1]
         else:
@@ -119,8 +118,9 @@ if __name__ == '__main__':
     # ret = obj.load_tick_data(start_date='20210704', end_date='20210715', product_ids=['rb'], main_con_flag=1,
     #                          if_filter=True)
     data_fetch.get_instrument_contract(product_ids=['rb'])
-    tick_mkt = data_fetch.load_tick_data(start_date='20210704', end_date='20210715', instrument_ids=['rb2110'], main_con_flag=1,
-                             if_filter=True)
+    tick_mkt = data_fetch.load_tick_data(start_date='20210704', end_date='20210715', instrument_ids=['rb2110'],
+                                         main_con_flag=1,
+                                         if_filter=True)
     # print(ret.shape)
     tick_mkt = tick_mkt.set_index('InstrumentID').join(
         data_fetch.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()

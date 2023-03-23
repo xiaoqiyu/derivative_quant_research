@@ -415,7 +415,7 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
             else:
                 wrong_short_open += 1
     average_holding_time = total_holding_time / (long_open + short_open) if long_open + short_open > 0 else 0.0
-    print("******************back test results for date:{0}*********************".format(trade_date))
+    print("******************back test models for date:{0}*********************".format(trade_date))
     print('trade date', trade_date)
     print(long_open, short_open, correct_long_open, wrong_long_open, correct_short_open, wrong_short_open)
     print('total return:', total_return)
@@ -426,11 +426,11 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
     print("average_holding_time:", average_holding_time)
     print("max_holding_time:", max_holding_time)
     print("min_holding_time:", min_holding_time)
-    print("******************back test results for date:{0}*********************".format(trade_date))
+    print("******************back test models for date:{0}*********************".format(trade_date))
 
     precision = (correct_long_open + correct_short_open) / (
             long_open + short_open) if long_open + short_open > 0 else 0.0
-    # f = open("results/results_{0}.txt".format(product_id), "a")
+    # f = open("models/results_{0}.txt".format(product_id), "a")
     # _key = '{0}_{1}'.format(trade_date, instrument_id)
     # result_fname_digest = hashlib.sha256(bytes(backtesting_config, encoding='utf-8')).hexdigest()
     # f.write("{0}:{1}\n".format(backtesting_config, result_fname_digest))

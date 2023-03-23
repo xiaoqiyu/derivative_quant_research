@@ -38,7 +38,7 @@ def prepare_test_mkt():
 
 
 def transaction_analysis():
-    df = pd.read_csv('results/trans_m2105_20210104.csv')
+    df = pd.read_csv('models/trans_m2105_20210104.csv')
     long_open_ts = list(df[df.direction == 0]['timestamp'])
     long_close_ts = list(df[df.direction == 1]['timestamp'])
     short_open_ts = list(df[df.direction == 10]['timestamp'])

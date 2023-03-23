@@ -19,12 +19,13 @@ import uqer
 from uqer import DataAPI
 from datetime import time
 from datetime import datetime
+from sklearn.preprocessing import StandardScaler
 
 _base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../../..")))
 sys.path.append(_base_dir)
 
 from codes.research.data_process.data_fetcher import DataFetcher
-from codes.utils.utils import get_mul_num
+from codes.utils.helper import timeit
 from codes.utils.define import *
 
 
@@ -127,6 +128,7 @@ def cal_cos(x: list, turn_idx: list, turn_val: list) -> list:
     return ret
 
 
+@timeit
 def calculate_raw_features(data_fetch: DataFetcher = None, product_id: str = '', instrument_id: str = '',
                            start_date: str = '', end_date: str = ''):
     data_fetch.get_instrument_mkt(product_ids=[product_id], start_date=start_date, end_date=end_date)
@@ -191,16 +193,16 @@ def cal_derived_featuers():
     pass
 
 
-def gen_train_test_features(data_fetcher: DataFetcher = None, product_id: str = '', freq: str = '60S',
+@timeit
+def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, product_id: str = '', freq: str = '60S',
                             missing_threshold: int = 20,
                             train_start_date: str = '', train_end_date: str = '2021-07-05',
                             test_start_date: str = '',
                             test_end_date: str = ''):
-    # TODO read cached features for testing
     df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=train_start_date,
                                 end_date=test_end_date)
 
-    # read feature from cache for testing
+    # TODO read feature from cache for testing
     # df = pd.read_csv(os.path.abspath(os.path.join(__file__, "../feature_sample.csv")))
 
     # FIXME hardcode for testing features
@@ -212,16 +214,37 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, product_id: str = 
     train_df = df[df.UpdateTime <= train_end_dt_str]
     test_df = df[df.UpdateTime > train_end_dt_str]
 
-    train_data_loader, bins = get_dataloader(df=train_df, freq=freq, missing_threshold=missing_threshold,
-                                             dt_col_name='UpdateTime',
+    std_model = param_model.std_model or StandardScaler()
+
+    transform_features = copy.deepcopy(RENAME_FEATURES)
+    transform_features.remove(DT_COL_NAME)
+    transform_features.remove(LABEL)
+
+    std_train_df = pd.DataFrame(std_model.fit_transform(train_df[transform_features]), columns=transform_features)
+    std_train_df[DT_COL_NAME] = train_df[DT_COL_NAME]
+    std_train_df[LABEL] = train_df[LABEL]
+    del train_df
+
+    std_test_df = pd.DataFrame(std_model.transform(test_df[transform_features]), columns=transform_features)
+    std_test_df[DT_COL_NAME] = list(test_df[DT_COL_NAME])
+    std_test_df[LABEL] = list(test_df[LABEL])
+    del test_df
+
+    train_data_loader, bins = get_dataloader(df=std_train_df.dropna(), freq=freq, missing_threshold=missing_threshold,
+                                             dt_col_name=DT_COL_NAME,
                                              if_filtered=True, if_train=True, bins=None)
     # FIXME remove the pass param train_df, for testing only
-    test_data_loader, bins = get_dataloader(df=test_df, freq=freq, missing_threshold=missing_threshold,
-                                            dt_col_name='UpdateTime',
+    test_data_loader, bins = get_dataloader(df=std_test_df.dropna(), freq=freq, missing_threshold=missing_threshold,
+                                            dt_col_name=DT_COL_NAME,
                                             if_filtered=True, if_train=True, bins=bins)
+
+    param_model.update_model(std_model=std_model, bins=bins)
+    param_model.dump_model()
+
     return train_data_loader, test_data_loader
 
 
+@timeit
 def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_name: str = 'UpdateTime',
                    if_filtered: bool = True, if_train: bool = True, bins=None):
     '''
@@ -258,8 +281,6 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
     notnull_labels = [idx for idx, item in enumerate(list(df[LABEL].notnull())) if item]
     img = []
     _len = len(notnull_labels)
-
-    # label, bins = pd.qcut(df_train['Q_ADV'], q=500, labels=list(range(500)), retbins=True)
 
     _featuers = list(df.values)
     _index = list(df.index)

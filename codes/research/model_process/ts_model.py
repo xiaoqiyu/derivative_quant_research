@@ -37,6 +37,11 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 logger = Logger().get_log()
 
 
+class TsModel(object):
+    def __init__(self):
+        pass
+
+
 def train_lstm(data_fetch=None, product_id='rb'):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     rnn = lstm().to(device)  # 使用GPU或CPU

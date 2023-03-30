@@ -236,7 +236,7 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
     # FIXME remove the pass param train_df, for testing only
     test_data_loader, bins = get_dataloader(df=std_test_df.dropna(), freq=freq, missing_threshold=missing_threshold,
                                             dt_col_name=DT_COL_NAME,
-                                            if_filtered=True, if_train=True, bins=bins)
+                                            if_filtered=True, if_train=False, bins=bins)
 
     param_model.update_model(std_model=std_model, bins=bins)
     param_model.dump_model()
@@ -302,7 +302,8 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
             _sample.append(_row)
         img.append(_sample)
     _tensor = torch.Tensor(np.array(img))
-    _data_loader = DataLoader(_tensor, batch_size=BATCH_SIZE, shuffle=False, drop_last=True)
+    _shuffle = True if if_train else False
+    _data_loader = DataLoader(_tensor, batch_size=BATCH_SIZE, shuffle=_shuffle, drop_last=True)
     return _data_loader, bins
 
 

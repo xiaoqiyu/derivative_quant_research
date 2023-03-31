@@ -129,7 +129,7 @@ def cal_cos(x: list, turn_idx: list, turn_val: list) -> list:
 
 def cal_oir(bid_price: list, bid_vol: list, ask_price: list, ask_vol: list, n_rows: int) -> tuple:
     """
-    calculate order imbalance factors
+    calculate order imbalance features
     :param bid_price:
     :param bid_vol:
     :param ask_price:

@@ -103,7 +103,8 @@ class TSModel(object):
         optimizer = torch.optim.Adam(rnn.parameters(), lr=LR)  # optimize all rnn parameters
         loss_func = nn.CrossEntropyLoss()  # 分类问题
         _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_{0}.tar'.format(product_id))
-        epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer, _rnn_model_path)
+        epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
+                                                                                              _rnn_model_path)
         mult_step_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                                    milestones=[EPOCH // 2, EPOCH // 4 * 3], gamma=0.1)
         train_loss = []
@@ -193,7 +194,7 @@ class TSModel(object):
         plt.legend(['train_loss', 'test_loss'])
         train_loss_track_path = os.path.join(_base_dir, 'data\models\\tsmodels\\train_loss_{0}'.format(product_id))
         logger.info(
-            'Complete train for epoch:{0}, save train result figure to :{1}'.format(EPOCH, train_loss_track_path))
+            'Complete train for epoch:{0}, save train result figure to :{1}'.format(i, train_loss_track_path))
         plt.savefig(train_loss_track_path)
 
 

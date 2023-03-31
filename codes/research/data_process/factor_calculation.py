@@ -31,7 +31,7 @@ from codes.utils.define import *
 def cal_oir(bid_price: list = [], bid_vol: list = [], ask_price: list = [], ask_vol: list = [],
             n_rows: int = 0) -> tuple:
     """
-    calculate order imbalance factors
+    calculate order imbalance features
     :param bid_price:
     :param bid_vol:
     :param ask_price:
@@ -214,6 +214,7 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
     train_df = df[df.UpdateTime <= train_end_dt_str]
     test_df = df[df.UpdateTime > train_end_dt_str]
 
+    # TODO add logic to drop abnormal data,e.g. mean +- 3std
     std_model = param_model.std_model or StandardScaler()
 
     transform_features = copy.deepcopy(RENAME_FEATURES)
@@ -307,18 +308,21 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
 
 
 if __name__ == '__main__':
+    product_id = 'rb'
+    start_date = '2021-07-05'
+    end_date = '2021-07-09'
+    feature_path = os.path.join(_base_dir, 'data\\features\\features_{0}_{1}_{2}.csv'.format(product_id, start_date, end_date))
+
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     data_fetch = DataFetcher(uqer_client)
-    # df_features = calculate_raw_features(data_fetch=data_fetch, product_id='rb', start_date='20210704',
-    #                                      end_date='20210705')
-    # df_features.to_csv('feature_sample.csv')
-    # df_features = pd.read_csv('feature_sample.csv')
+    df_features = calculate_raw_features(data_fetch=data_fetch, product_id=product_id, start_date=start_date,
+                                         end_date=end_date)
+    df_features.to_csv(feature_path, index=False)
+
     train_data_loader, test_data_loader = gen_train_test_features(data_fetcher=data_fetch, product_id='rb', freq='60S',
                                                                   missing_threshold=20,
                                                                   train_start_date='2021-07-05',
                                                                   train_end_date='2021-07-08',
                                                                   test_start_date='2021-07-09',
                                                                   test_end_date='2021-07-09')
-    print(train_data_loader.dataset.shape)
-    # ret = gen_train_test_features()
-    # print(df_features.shape)
+    # print(train_data_loader.dataset.shape)

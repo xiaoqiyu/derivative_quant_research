@@ -103,13 +103,15 @@ class TSModel(object):
         optimizer = torch.optim.Adam(rnn.parameters(), lr=LR)  # optimize all rnn parameters
         loss_func = nn.CrossEntropyLoss()  # 分类问题
         _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_{0}.tar'.format(product_id))
-        epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
-                                                                                              _rnn_model_path)
+        # in one epoch not load checkpoint
+        # epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
+        #                                                                                       _rnn_model_path)
         mult_step_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                                    milestones=[EPOCH // 2, EPOCH // 4 * 3], gamma=0.1)
         train_loss = []
         test_loss = []
-        min_test_loss = cache_test_loss
+        # min_test_loss = cache_test_loss
+        min_test_loss = np.inf
         _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
         param_model = ParamModel(_param_model_path)
         param_model.load_model()
@@ -120,24 +122,27 @@ class TSModel(object):
         # train_test_dates = self.get_train_test_dates(start_date=start_date, end_date=end_date)
         all_trade_dates = data_fetcher.get_all_trade_dates(start_date, end_date)
         train_end_idx = int(len(all_trade_dates) * 0.7)
+        _train_end_date = all_trade_dates[train_end_idx]
+        _test_start_date = all_trade_dates[train_end_idx + 1]
+        logger.info(
+            "Get dataloader for train:{0}-{1}, test:{2}-{3}".format(start_date, _train_end_date, _test_start_date,
+                                                                    end_date))
         train_data_loader, test_data_loader = gen_train_test_features(data_fetcher=self.data_fetcher,
                                                                       param_model=param_model,
                                                                       product_id=product_id,
                                                                       freq="{0}S".format(SEC_INTERVAL),
                                                                       missing_threshold=MISSING_THRESHOLD,
                                                                       train_start_date=start_date,
-                                                                      train_end_date=all_trade_dates[train_end_idx],
-                                                                      test_start_date=all_trade_dates[
-                                                                          train_end_idx + 1],
+                                                                      train_end_date=_train_end_date,
+                                                                      test_start_date=_test_start_date,
                                                                       test_end_date=end_date)
         # for i, dates in enumerate(train_test_dates):
-        for i in EPOCH:
+        for i in range(EPOCH):
             # _train_start, _train_end, _test_start, _test_end = dates
             # logger.info(
             #     "Start epoch:{0} for train dates:({1}-{2}) and test dates:({3}-{4})".format(i, _train_start, _train_end,
             #                                                                                 _test_start, _test_end))
             total_train_loss = []
-
             rnn.train()  # 进入训练模式
             for step, item in enumerate(train_data_loader):
                 # lr = set_lr(optimizer, i, EPOCH, LR)
@@ -153,6 +158,8 @@ class TSModel(object):
                 loss = loss_func(prediction[:, -1, :], b_y[:, 0, :].view(b_y.size()[0]))  # 计算损失，target要转1-D
                 optimizer.zero_grad()  # clear gradients for this training step
                 loss.backward()  # backpropagation, compute gradients
+                # TODO double check the grad norm parameters
+                nn.utils.clip_grad_norm_(rnn.parameters(), max_norm=10, norm_type=2)
                 optimizer.step()  # apply gradients
                 total_train_loss.append(loss.item())
             train_loss.append(np.mean(total_train_loss))  # 存入平均交叉熵
@@ -171,7 +178,6 @@ class TSModel(object):
                     prediction = rnn(b_x)  # rnn output
                 loss = loss_func(prediction[:, -1, :], b_y[:, 0, :].view(b_y.size()[0]))  # calculate loss
                 step_test_loss.append(loss.item())
-
                 targets = rnn.predict(b_x)
                 targets_lst = targets.tolist()
                 y_lst = b_y[:, 0, :].view(b_y.size()[0]).tolist()
@@ -181,21 +187,49 @@ class TSModel(object):
                     test_epoch.extend([i] * len(y_lst))
                 else:
                     logger.warn("predict:{0} and y label:{1} not the same len".format(len(targets_lst), len(y_lst)))
-            df_predict = pd.DataFrame({'y_true': test_labels, 'y_predict': test_predicts, 'epoch': test_epoch})
-            predict_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_predict_{0}.csv'.format(product_id))
-            df_predict.to_csv(predict_path, index=False)
+            _correct_num = len([item for idx, item in enumerate(test_predicts) if test_labels[idx] == item])
+            true_0 = len([item for item in test_labels if item == 0])
+            true_1 = len([item for item in test_labels if item == 1])
+            true_2 = len([item for item in test_labels if item == 2])
+            pred_0 = len([item for item in test_predicts if item == 0])
+            pred_1 = len([item for item in test_predicts if item == 1])
+            pred_2 = len([item for item in test_predicts if item == 2])
+            _correct_num0 = len(
+                [item for idx, item in enumerate(test_predicts) if test_labels[idx] == item and item == 0])
+            _correct_num1 = len(
+                [item for idx, item in enumerate(test_predicts) if test_labels[idx] == item and item == 1])
+            _correct_num2 = len(
+                [item for idx, item in enumerate(test_predicts) if test_labels[idx] == item and item == 2])
+            _acc0 = round(float(_correct_num0 / pred_0), 2) if pred_0 else 0.0
+            _acc1 = round(float(_correct_num1 / pred_1), 2) if pred_1 else 0.0
+            _acc2 = round(float(_correct_num2 / pred_2), 2) if pred_2 else 0.0
+            logger.info(
+                "Epoch:{0},true:0=>{1},1=>{2},2=>{3};pred:0=>{4},1=>{5},2=>{6}".format(i, true_0, true_1, true_2,
+                                                                                       pred_0, pred_1, pred_2))
+            logger.info(
+                "Accu:0=>{0}, 1=>{1}, 2=>{2}, corr_num0=>{3}, corr_num1=>{4}, corr_num2=>{5}".format(_acc0, _acc1,
+                                                                                                     _acc2,
+                                                                                                     _correct_num0,
+                                                                                                     _correct_num1,
+                                                                                                     _correct_num2))
             curr_epoch_test_loss = np.mean(step_test_loss)
             test_loss.append(curr_epoch_test_loss)
-            logger.info('Epoch:{0}, mean train loss:{1},std train loss:{2}, test loss is:{3}'.format(i, np.mean(
-                total_train_loss), np.std(total_train_loss), test_loss))
+            logger.info(
+                'Epoch:{0}, mean train loss:{1},std train loss:{2}, test loss is:{3}, acc:{4}'.format(i, np.mean(
+                    total_train_loss), np.std(total_train_loss), curr_epoch_test_loss, _correct_num / len(
+                    test_predicts)))
             if test_loss and curr_epoch_test_loss < min_test_loss:
-                logger.info("Save model in epoch:{0} with test_loss:{1}".format(i, test_loss))
+                logger.info("Save model in epoch:{0} with test_loss:{1}".format(i, curr_epoch_test_loss))
                 min_test_loss = curr_epoch_test_loss
-                self.save_torch_checkpoint(epoch, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
+                self.save_torch_checkpoint(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
             logger.info('Epoch: {0}, Current learning rate: {1}'.format(i, mult_step_scheduler.get_lr()))
             mult_step_scheduler.step()  # 学习率更新
-        plt.plot(total_train_loss, color='r')
-        plt.plot(step_test_loss, color='b')
+        df_predict = pd.DataFrame({'y_true': test_labels, 'y_predict': test_predicts, 'epoch': test_epoch})
+        predict_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_predict_{0}.csv'.format(product_id))
+
+        df_predict.to_csv(predict_path, index=False)
+        plt.plot(train_loss, color='r')
+        plt.plot(test_loss, color='b')
         plt.legend(['train_loss', 'test_loss'])
         train_loss_track_path = os.path.join(_base_dir, 'data\models\\tsmodels\\train_loss_{0}'.format(product_id))
         logger.info(
@@ -210,4 +244,4 @@ if __name__ == '__main__':
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     data_fetcher = DataFetcher(uqer_client)
     ts_model = TSModel(data_fetcher)
-    ts_model.train_model(product_id='rb', start_date='2021-07-01', end_date='2021-07-30')
+    ts_model.train_model(product_id='rb', start_date='2021-07-01', end_date='2021-07-31')

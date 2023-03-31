@@ -23,9 +23,9 @@ TICK = 1
 # model constants
 # 定义模型训练相关的常量
 INPUT_SIZE = 3  # 定义输入的特征数
-HIDDEN_SIZE = 32  # 定义一个LSTM单元有多少个神经元
-BATCH_SIZE = 128  # batch
-EPOCH = 2  # 学习次数
+HIDDEN_SIZE = 64  # 定义一个LSTM单元有多少个神经元
+BATCH_SIZE = 512  # batch
+EPOCH = 15  # 学习次数
 LR = 0.001  # 学习率
 SEC_INTERVAL = 60  # FREQ 是相应的，interval 为60， 则 FREQ为“60S"
 SEQUENCE = SEC_INTERVAL * 2  # 步长,时间序列长度,因为数据频率是500ms, 一秒有两个数据记录
@@ -101,8 +101,8 @@ CONF_FILE_NAME = '.editorconfig'
 STRATEGY_CONF_NAME = 'strategy.ini'
 TICK_MODEL_DIR = 'tickmodels'
 DAILY_MODEL_DIR = 'daily_models'
-# TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_202107'
-TICK_MKT_DIR = 'D:\\future\FutAC_TickKZ_PanKou_Daily_202107'
+TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_202107'
+# TICK_MKT_DIR = 'D:\\future\FutAC_TickKZ_PanKou_Daily_202107'
 FACTOR_DIR = 'features'
 CACHE_DIR = 'data'
 BT_DIR = 't0backtest'

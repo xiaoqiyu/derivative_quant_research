@@ -117,22 +117,27 @@ class TSModel(object):
         test_predicts = []
         test_labels = []
         test_epoch = []
-        train_test_dates = self.get_train_test_dates(start_date=start_date, end_date=end_date)
-        for i, dates in enumerate(train_test_dates):
-            _train_start, _train_end, _test_start, _test_end = dates
-            logger.info(
-                "Start epoch:{0} for train dates:({1}-{2}) and test dates:({3}-{4})".format(i, _train_start, _train_end,
-                                                                                            _test_start, _test_end))
+        # train_test_dates = self.get_train_test_dates(start_date=start_date, end_date=end_date)
+        all_trade_dates = data_fetcher.get_all_trade_dates(start_date, end_date)
+        train_end_idx = int(len(all_trade_dates) * 0.7)
+        train_data_loader, test_data_loader = gen_train_test_features(data_fetcher=self.data_fetcher,
+                                                                      param_model=param_model,
+                                                                      product_id=product_id,
+                                                                      freq="{0}S".format(SEC_INTERVAL),
+                                                                      missing_threshold=MISSING_THRESHOLD,
+                                                                      train_start_date=start_date,
+                                                                      train_end_date=all_trade_dates[train_end_idx],
+                                                                      test_start_date=all_trade_dates[
+                                                                          train_end_idx + 1],
+                                                                      test_end_date=end_date)
+        # for i, dates in enumerate(train_test_dates):
+        for i in EPOCH:
+            # _train_start, _train_end, _test_start, _test_end = dates
+            # logger.info(
+            #     "Start epoch:{0} for train dates:({1}-{2}) and test dates:({3}-{4})".format(i, _train_start, _train_end,
+            #                                                                                 _test_start, _test_end))
             total_train_loss = []
-            train_data_loader, test_data_loader = gen_train_test_features(data_fetcher=self.data_fetcher,
-                                                                          param_model=param_model,
-                                                                          product_id=product_id,
-                                                                          freq="{0}S".format(SEC_INTERVAL),
-                                                                          missing_threshold=MISSING_THRESHOLD,
-                                                                          train_start_date=_train_start,
-                                                                          train_end_date=_train_end,
-                                                                          test_start_date=_test_start,
-                                                                          test_end_date=_test_end)
+
             rnn.train()  # 进入训练模式
             for step, item in enumerate(train_data_loader):
                 # lr = set_lr(optimizer, i, EPOCH, LR)
@@ -196,6 +201,9 @@ class TSModel(object):
         logger.info(
             'Complete train for epoch:{0}, save train result figure to :{1}'.format(i, train_loss_track_path))
         plt.savefig(train_loss_track_path)
+
+    def infer(self):
+        pass
 
 
 if __name__ == '__main__':

@@ -244,4 +244,4 @@ if __name__ == '__main__':
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     data_fetcher = DataFetcher(uqer_client)
     ts_model = TSModel(data_fetcher)
-    ts_model.train_model(product_id='rb', start_date='2021-07-01', end_date='2021-07-31')
+    ts_model.train_model(product_id='rb', start_date='2021-01-04', end_date='2021-03-31')

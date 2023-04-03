@@ -96,7 +96,7 @@ class DataFetcher(object):
             row = list(_df_instrument.values[0])
             _instrument = row[columns.index('ticker')]
             _exchange = row[columns.index('exchangeCD')]
-            _tick_mkt_path = os.path.join(self.mkt_cache_dir, exchange_map.get(_exchange),
+            _tick_mkt_path = os.path.join(self.mkt_cache_dir+d[:6], exchange_map.get(_exchange),
                                           '{0}_{1}.csv'.format(_instrument, d))
             if os.path.exists(_tick_mkt_path):
                 tick_mkt = pd.read_csv(_tick_mkt_path, encoding='gbk')

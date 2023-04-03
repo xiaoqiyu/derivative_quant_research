@@ -20,10 +20,19 @@ PLT_END = -10
 TICK_SIZE = 41400
 TICK = 1
 
+# OpenVolume/CloseVolume has too many missing value, for rb in 202107,about 5% missing value
+TEST_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'LastPrice', 'OpenInterest',
+                 'InterestDiff', 'Turnover', 'Volume', 'wap', 'log_return',
+                 'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'wap_log_return', ]
+RENAME_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'LastPrice',
+                   'OpenInterest', 'InterestDiff', 'Turnover', 'Volume', 'wap', 'log_return',
+                   'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'label']
+
 # model constants
 # 定义模型训练相关的常量
-INPUT_SIZE = 3  # 定义输入的特征数
-HIDDEN_SIZE = 64  # 定义一个LSTM单元有多少个神经元
+INPUT_SIZE = len(TEST_FEATURES) - 2 # 定义输入的特征数
+RNN_INPUT_SIZE = 128
+HIDDEN_SIZE = 128  # 定义一个LSTM单元有多少个神经元
 BATCH_SIZE = 512  # batch
 EPOCH = 15  # 学习次数
 LR = 0.001  # 学习率
@@ -35,8 +44,7 @@ MODEL = 'LSTM'  # 模型名字
 VALID_CRITERIER = 'cross_entropy_loss'
 NUM_LABEL = 3  # 模型输出的分类类别数量： 三类： 0， 1， 2 分别为空，无，多信号
 LABEL = 'label'
-TEST_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'wap_log_return']
-RENAME_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'label']
+
 DT_COL_NAME = 'UpdateTime'
 MISSING_THRESHOLD = 20  # 在每个时间序列样本中，如果确实的时间步数据大于该参数，则抛弃这个样本，跟SEQUENCE有关
 EPOCH_DAYS = 10
@@ -101,15 +109,14 @@ CONF_FILE_NAME = '.editorconfig'
 STRATEGY_CONF_NAME = 'strategy.ini'
 TICK_MODEL_DIR = 'tickmodels'
 DAILY_MODEL_DIR = 'daily_models'
-TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_202107'
-# TICK_MKT_DIR = 'D:\\future\FutAC_TickKZ_PanKou_Daily_202107'
+# TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_202107'
+# TICK_MKT_DIR = 'G:\\future\FutAC_TickKZ_PanKou_Daily_202107'
+TICK_MKT_DIR = 'G:\\future\FutAC_TickKZ_PanKou_Daily_'
 FACTOR_DIR = 'features'
 CACHE_DIR = 'data'
 BT_DIR = 't0backtest'
 daily_cache_name = 'data/future_20210101_20210804.csv'
 MKT_MISSING_SKIP = 0.3
-
-
 
 exchange_map = {'XZCE': 'zc', 'XSGE': 'sc', 'XSIE': 'ine', 'XDCE': 'dc'}
 

@@ -3,7 +3,7 @@
 # @Time    : 2023/3/13 17:39
 # @Author  : rpyxqi@gmail.com
 # @Site    : 
-# @File    : ts_model.py
+# @File    : fut_trend_model.py
 
 import torch
 import torch.nn as nn
@@ -20,7 +20,7 @@ sys.path.append(_base_dir)
 
 from codes.utils.logger import Logger
 from codes.utils.define import *
-from codes.research.model_process.dl_models import lstm
+from codes.research.model_process.dl_models import RNN
 from codes.research.data_process.factor_calculation import gen_train_test_features
 from codes.research.data_process.data_fetcher import DataFetcher
 from codes.utils.helper import timeit
@@ -57,10 +57,11 @@ class ParamModel(object):
                 return pickle.load(fin)
 
 
-class TSModel(object):
+class RNNModel(object):
     def __init__(self, data_fetcher: DataFetcher = None):
         self.data_fetcher = data_fetcher
         self.data_path = os.path.join(_base_dir, 'data')
+        self.model_name = 'rnn'
 
     @timeit
     def save_torch_checkpoint(self, epoch, model, optimizer, train_loss, test_loss, path):  # path convension is .tar
@@ -73,7 +74,12 @@ class TSModel(object):
         }, path)
 
     @timeit
-    def load_torch_checkpoint(self, model, optimizer, path):
+    def load_torch_checkpoint(self, model=None, optimizer=None, path=None):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        if not model:
+            model = RNN().to(device)  # 使用GPU或CPU
+        if not optimizer:
+            optimizer = torch.optim.Adam(model.parameters(), lr=LR)  # optimize all rnn parameters
         epoch, train_loss, test_loss = 0, np.inf, np.inf
         if os.path.exists(path):
             checkpoint = torch.load(path)
@@ -99,10 +105,11 @@ class TSModel(object):
     def train_model(self, product_id: str = 'rb', start_date: str = '', end_date: str = ''):
         logger.info("Start train model for product:{0} from {1} to {2}".format(product_id, start_date, end_date))
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        rnn = lstm().to(device)  # 使用GPU或CPU
+        rnn = RNN().to(device)  # 使用GPU或CPU
         optimizer = torch.optim.Adam(rnn.parameters(), lr=LR)  # optimize all rnn parameters
         loss_func = nn.CrossEntropyLoss()  # 分类问题
-        _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_{0}.tar'.format(product_id))
+        _rnn_model_path = os.path.join(_base_dir,
+                                       'data\models\\tsmodels\\{0}_{1}.tar'.format(self.model_name, product_id))
         # in one epoch not load checkpoint
         # epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
         #                                                                                       _rnn_model_path)
@@ -136,12 +143,7 @@ class TSModel(object):
                                                                       train_end_date=_train_end_date,
                                                                       test_start_date=_test_start_date,
                                                                       test_end_date=end_date)
-        # for i, dates in enumerate(train_test_dates):
         for i in range(EPOCH):
-            # _train_start, _train_end, _test_start, _test_end = dates
-            # logger.info(
-            #     "Start epoch:{0} for train dates:({1}-{2}) and test dates:({3}-{4})".format(i, _train_start, _train_end,
-            #                                                                                 _test_start, _test_end))
             total_train_loss = []
             rnn.train()  # 进入训练模式
             for step, item in enumerate(train_data_loader):
@@ -155,7 +157,8 @@ class TSModel(object):
                 prediction = rnn(b_x)
                 #         h_s = h_s.data        # repack the hidden state, break the connection from last iteration
                 #         h_c = h_c.data        # repack the hidden state, break the connection from last iteration
-                loss = loss_func(prediction[:, -1, :], b_y[:, 0, :].view(b_y.size()[0]))  # 计算损失，target要转1-D
+                # loss = loss_func(prediction[:, -1, :], b_y[:, 0, :].view(b_y.size()[0]))  # 计算损失，target要转1-D
+                loss = loss_func(prediction, b_y[:, 0, :].view(b_y.size()[0]))
                 optimizer.zero_grad()  # clear gradients for this training step
                 loss.backward()  # backpropagation, compute gradients
                 # TODO double check the grad norm parameters
@@ -176,7 +179,7 @@ class TSModel(object):
 
                 with torch.no_grad():
                     prediction = rnn(b_x)  # rnn output
-                loss = loss_func(prediction[:, -1, :], b_y[:, 0, :].view(b_y.size()[0]))  # calculate loss
+                loss = loss_func(prediction, b_y[:, 0, :].view(b_y.size()[0]))  # calculate loss
                 step_test_loss.append(loss.item())
                 targets = rnn.predict(b_x)
                 targets_lst = targets.tolist()
@@ -215,9 +218,9 @@ class TSModel(object):
             curr_epoch_test_loss = np.mean(step_test_loss)
             test_loss.append(curr_epoch_test_loss)
             logger.info(
-                'Epoch:{0}, mean train loss:{1},std train loss:{2}, test loss is:{3}, acc:{4}'.format(i, np.mean(
-                    total_train_loss), np.std(total_train_loss), curr_epoch_test_loss, _correct_num / len(
-                    test_predicts)))
+                'Epoch:{0}, mean train loss:{1},test loss:{2},acc :{3}, train loss std is:{4}'.format(i, np.mean(
+                    total_train_loss), curr_epoch_test_loss, _correct_num / len(
+                    test_predicts), np.std(total_train_loss)))
             if test_loss and curr_epoch_test_loss < min_test_loss:
                 logger.info("Save model in epoch:{0} with test_loss:{1}".format(i, curr_epoch_test_loss))
                 min_test_loss = curr_epoch_test_loss
@@ -225,23 +228,46 @@ class TSModel(object):
             logger.info('Epoch: {0}, Current learning rate: {1}'.format(i, mult_step_scheduler.get_lr()))
             mult_step_scheduler.step()  # 学习率更新
         df_predict = pd.DataFrame({'y_true': test_labels, 'y_predict': test_predicts, 'epoch': test_epoch})
-        predict_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_predict_{0}.csv'.format(product_id))
+        predict_path = os.path.join(_base_dir,
+                                    'data\models\\tsmodels\\{0}_predict_{1}.csv'.format(self.model_name, product_id))
 
         df_predict.to_csv(predict_path, index=False)
         plt.plot(train_loss, color='r')
         plt.plot(test_loss, color='b')
         plt.legend(['train_loss', 'test_loss'])
-        train_loss_track_path = os.path.join(_base_dir, 'data\models\\tsmodels\\train_loss_{0}'.format(product_id))
+        train_loss_track_path = os.path.join(_base_dir,
+                                             'data\models\\tsmodels\\{0}_train_loss_{1}'.format(self.model_name,
+                                                                                                product_id))
         logger.info(
             'Complete train for epoch:{0}, save train result figure to :{1}'.format(i, train_loss_track_path))
         plt.savefig(train_loss_track_path)
 
-    def infer(self):
+
+class LRModel(object):
+    def __init__(self, data_fetcher: DataFetcher = None):
+        self.data_fetcher = data_fetcher
+        self.data_path = os.path.join(_base_dir, 'data')
+
+    def train_model(self):
         pass
+
+
+# currently  only has RNN model
+def stacking_infer(product_id='rb', x=[]):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    rnn_model = RNNModel()
+    _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_{0}.tar'.format(product_id))
+    epoch, model, optimizer, train_loss, test_loss = rnn_model.load_torch_checkpoint(path=_rnn_model_path)
+    model.to_device(device)
+    # x as tensor, and call model predict(add model predict), no stacking yet, only train one model now
+
+
+def train_all(model_name='rnn'):
+    pass
 
 
 if __name__ == '__main__':
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     data_fetcher = DataFetcher(uqer_client)
-    ts_model = TSModel(data_fetcher)
-    ts_model.train_model(product_id='rb', start_date='2021-01-04', end_date='2021-03-31')
+    ts_model = RNNModel(data_fetcher)
+    ts_model.train_model(product_id='rb', start_date='2021-07-01', end_date='2021-07-31')

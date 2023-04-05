@@ -29,6 +29,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 _log_path = os.path.join(_base_dir, 'data\logs\{0}'.format(os.path.split(__file__)[-1].strip('.py')))
 logger = Logger(_log_path, 'INFO', __name__).get_log()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class ParamModel(object):
@@ -75,7 +76,7 @@ class RNNModel(object):
 
     @timeit
     def load_torch_checkpoint(self, model=None, optimizer=None, path=None):
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         if not model:
             model = RNN().to(device)  # 使用GPU或CPU
         if not optimizer:
@@ -91,7 +92,7 @@ class RNNModel(object):
         return epoch, model, optimizer, train_loss, test_loss
 
     def get_train_test_dates(self, start_date: str = '', end_date: str = ''):
-        all_trade_dates = data_fetcher.get_all_trade_dates(start_date, end_date)
+        all_trade_dates = self.data_fetcher.get_all_trade_dates(start_date, end_date)
         _len = len(all_trade_dates)
         ret = []
         train_days = int(EPOCH_DAYS * TRAIN_RATIO)
@@ -104,7 +105,7 @@ class RNNModel(object):
     @timeit
     def train_model(self, product_id: str = 'rb', start_date: str = '', end_date: str = ''):
         logger.info("Start train model for product:{0} from {1} to {2}".format(product_id, start_date, end_date))
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         rnn = RNN().to(device)  # 使用GPU或CPU
         optimizer = torch.optim.Adam(rnn.parameters(), lr=LR)  # optimize all rnn parameters
         loss_func = nn.CrossEntropyLoss()  # 分类问题
@@ -127,7 +128,7 @@ class RNNModel(object):
         test_labels = []
         test_epoch = []
         # train_test_dates = self.get_train_test_dates(start_date=start_date, end_date=end_date)
-        all_trade_dates = data_fetcher.get_all_trade_dates(start_date, end_date)
+        all_trade_dates = self.data_fetcher.get_all_trade_dates(start_date, end_date)
         train_end_idx = int(len(all_trade_dates) * 0.7)
         _train_end_date = all_trade_dates[train_end_idx]
         _test_start_date = all_trade_dates[train_end_idx + 1]
@@ -253,21 +254,30 @@ class LRModel(object):
 
 
 # currently  only has RNN model
-def stacking_infer(product_id='rb', x=[]):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+def stacking_infer(product_id='rb', x=None):
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     rnn_model = RNNModel()
-    _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\lstm_{0}.tar'.format(product_id))
+    _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\rnn_{0}.tar'.format(product_id))
     epoch, model, optimizer, train_loss, test_loss = rnn_model.load_torch_checkpoint(path=_rnn_model_path)
-    model.to_device(device)
+    # model.to_device(device)
+
+    x.to(device)
+    model.to(device)
     # x as tensor, and call model predict(add model predict), no stacking yet, only train one model now
+    y = model(x)
+    return y
 
 
 def train_all(model_name='rnn'):
-    pass
+    uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
+    data_fetcher = DataFetcher(uqer_client)
+    if model_name == 'rnn':
+        ts_model = RNNModel(data_fetcher)
+        ts_model.train_model(product_id='rb', start_date='2021-07-01', end_date='2021-07-15')
 
 
 if __name__ == '__main__':
-    uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
-    data_fetcher = DataFetcher(uqer_client)
-    ts_model = RNNModel(data_fetcher)
-    ts_model.train_model(product_id='rb', start_date='2021-07-01', end_date='2021-07-31')
+    train_all()
+    # x = torch.randn(5, 120, 15, device=device)
+    # y = stacking_infer(product_id='rb', x=x)
+    # print(y)

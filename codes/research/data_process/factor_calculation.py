@@ -216,32 +216,36 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
 
     # TODO add logic to drop abnormal data,e.g. mean +- 3std
     std_model = param_model.std_model or StandardScaler()
-
     transform_features = copy.deepcopy(RENAME_FEATURES)
     transform_features.remove(DT_COL_NAME)
     transform_features.remove(LABEL)
 
-    std_train_df = pd.DataFrame(std_model.fit_transform(train_df[transform_features]), columns=transform_features)
-    std_train_df[DT_COL_NAME] = train_df[DT_COL_NAME]
-    std_train_df[LABEL] = train_df[LABEL]
-    del train_df
+    if train_df.shape[0] > 0:
+        std_train_df = pd.DataFrame(std_model.fit_transform(train_df[transform_features]), columns=transform_features)
+        std_train_df[DT_COL_NAME] = train_df[DT_COL_NAME]
+        std_train_df[LABEL] = train_df[LABEL]
+        del train_df
+        train_data_loader, bins = get_dataloader(df=std_train_df.dropna(), freq=freq,
+                                                 missing_threshold=missing_threshold,
+                                                 dt_col_name=DT_COL_NAME,
+                                                 if_filtered=True, if_train=True, bins=None)
+        param_model.update_model(std_model=std_model, bins=bins)
+        param_model.dump_model()
+    else:
+        train_data_loader = None
+        bins = std_model.bins
 
-    std_test_df = pd.DataFrame(std_model.transform(test_df[transform_features]), columns=transform_features)
-    std_test_df[DT_COL_NAME] = list(test_df[DT_COL_NAME])
-    std_test_df[LABEL] = list(test_df[LABEL])
-    del test_df
+    if test_df.shape[0] > 0:
+        std_test_df = pd.DataFrame(std_model.transform(test_df[transform_features]), columns=transform_features)
+        std_test_df[DT_COL_NAME] = list(test_df[DT_COL_NAME])
+        std_test_df[LABEL] = list(test_df[LABEL])
+        del test_df
 
-    train_data_loader, bins = get_dataloader(df=std_train_df.dropna(), freq=freq, missing_threshold=missing_threshold,
-                                             dt_col_name=DT_COL_NAME,
-                                             if_filtered=True, if_train=True, bins=None)
-    # FIXME remove the pass param train_df, for testing only
-    test_data_loader, bins = get_dataloader(df=std_test_df.dropna(), freq=freq, missing_threshold=missing_threshold,
-                                            dt_col_name=DT_COL_NAME,
-                                            if_filtered=True, if_train=False, bins=bins)
-
-    param_model.update_model(std_model=std_model, bins=bins)
-    param_model.dump_model()
-
+        test_data_loader, bins = get_dataloader(df=std_test_df.dropna(), freq=freq, missing_threshold=missing_threshold,
+                                                dt_col_name=DT_COL_NAME,
+                                                if_filtered=True, if_train=False, bins=bins)
+    else:
+        test_data_loader = None
     return train_data_loader, test_data_loader
 
 
@@ -312,7 +316,8 @@ if __name__ == '__main__':
     product_id = 'rb'
     start_date = '2021-07-05'
     end_date = '2021-07-09'
-    feature_path = os.path.join(_base_dir, 'data\\features\\features_{0}_{1}_{2}.csv'.format(product_id, start_date, end_date))
+    feature_path = os.path.join(_base_dir,
+                                'data\\features\\features_{0}_{1}_{2}.csv'.format(product_id, start_date, end_date))
 
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     data_fetch = DataFetcher(uqer_client)

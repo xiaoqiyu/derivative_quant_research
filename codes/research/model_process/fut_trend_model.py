@@ -4,6 +4,7 @@
 # @Author  : rpyxqi@gmail.com
 # @Site    : 
 # @File    : fut_trend_model.py
+import pprint
 
 import torch
 import torch.nn as nn
@@ -21,7 +22,7 @@ sys.path.append(_base_dir)
 from codes.utils.logger import Logger
 from codes.utils.define import *
 from codes.research.model_process.dl_models import RNN
-from codes.research.data_process.factor_calculation import gen_train_test_features
+from codes.research.data_process.factor_calculation import gen_train_test_features, gen_predict_feature_dataset
 from codes.research.data_process.data_fetcher import DataFetcher
 from codes.utils.helper import timeit
 
@@ -30,6 +31,8 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 _log_path = os.path.join(_base_dir, 'data\logs\{0}'.format(os.path.split(__file__)[-1].strip('.py')))
 logger = Logger(_log_path, 'INFO', __name__).get_log()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
+data_fetcher = DataFetcher(uqer_client)
 
 
 class ParamModel(object):
@@ -122,7 +125,7 @@ class RNNModel(object):
         min_test_loss = np.inf
         _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
         param_model = ParamModel(_param_model_path)
-        param_model.load_model()
+        param_model = param_model.load_model()
 
         test_predicts = []
         test_labels = []
@@ -254,30 +257,42 @@ class LRModel(object):
 
 
 # currently  only has RNN model
-def stacking_infer(product_id='rb', x=None):
+def stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-07-31'):
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     rnn_model = RNNModel()
     _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\rnn_{0}.tar'.format(product_id))
     epoch, model, optimizer, train_loss, test_loss = rnn_model.load_torch_checkpoint(path=_rnn_model_path)
     # model.to_device(device)
 
-    x.to(device)
+    _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
+    param_model = ParamModel(_param_model_path)
+    param_model = param_model.load_model()
     model.to(device)
-    # x as tensor, and call model predict(add model predict), no stacking yet, only train one model now
-    y = model(x)
-    return y
+    if x is not None:
+        x.to(device)
+        y = model.predict(x)
+    else:
+        data_loader, bins, dt_cols = gen_predict_feature_dataset(data_fetcher=data_fetcher, param_model=param_model,
+                                                                 product_id=product_id,
+                                                                 freq="{0}S".format(SEC_INTERVAL),
+                                                                 missing_threshold=MISSING_THRESHOLD,
+                                                                 start_date=start_date, end_date=end_date,
+                                                                 )
+        dt_cols = [item.split() for item in dt_cols]
+        dt_cols = ['{0}_{1}'.format(item[0], item[1].split('.')[0]) for item in dt_cols]
+        y = model.predict(data_loader.dataset[:, :, :-1])
+    return dict(zip(dt_cols, y.tolist()))
 
 
-def train_all(model_name='rnn'):
-    uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
-    data_fetcher = DataFetcher(uqer_client)
+def train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15'):
     if model_name == 'rnn':
         ts_model = RNNModel(data_fetcher)
-        ts_model.train_model(product_id='rb', start_date='2021-07-01', end_date='2021-07-15')
+        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date)
 
 
 if __name__ == '__main__':
-    train_all()
+    # train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-31')
     # x = torch.randn(5, 120, 15, device=device)
-    # y = stacking_infer(product_id='rb', x=x)
-    # print(y)
+    y = stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-07-02')
+    pprint.pprint(y)
+

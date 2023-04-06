@@ -225,15 +225,15 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
         std_train_df[DT_COL_NAME] = train_df[DT_COL_NAME]
         std_train_df[LABEL] = train_df[LABEL]
         del train_df
-        train_data_loader, bins = get_dataloader(df=std_train_df.dropna(), freq=freq,
-                                                 missing_threshold=missing_threshold,
-                                                 dt_col_name=DT_COL_NAME,
-                                                 if_filtered=True, if_train=True, bins=None)
+        train_data_loader, bins, _ = get_dataloader(df=std_train_df.dropna(), freq=freq,
+                                                    missing_threshold=missing_threshold,
+                                                    dt_col_name=DT_COL_NAME,
+                                                    if_filtered=True, if_train=True, bins=None)
         param_model.update_model(std_model=std_model, bins=bins)
         param_model.dump_model()
     else:
         train_data_loader = None
-        bins = std_model.bins
+        bins = param_model.bins
 
     if test_df.shape[0] > 0:
         std_test_df = pd.DataFrame(std_model.transform(test_df[transform_features]), columns=transform_features)
@@ -241,12 +241,51 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
         std_test_df[LABEL] = list(test_df[LABEL])
         del test_df
 
-        test_data_loader, bins = get_dataloader(df=std_test_df.dropna(), freq=freq, missing_threshold=missing_threshold,
-                                                dt_col_name=DT_COL_NAME,
-                                                if_filtered=True, if_train=False, bins=bins)
+        test_data_loader, bins, _ = get_dataloader(df=std_test_df.dropna(), freq=freq,
+                                                   missing_threshold=missing_threshold,
+                                                   dt_col_name=DT_COL_NAME,
+                                                   if_filtered=True, if_train=False, bins=bins)
     else:
         test_data_loader = None
     return train_data_loader, test_data_loader
+
+
+@timeit
+def gen_predict_feature_dataset(data_fetcher: DataFetcher = None, param_model=None, product_id: str = '',
+                                freq: str = '60S',
+                                missing_threshold: int = 20,
+                                start_date: str = '',
+                                end_date: str = '2021-07-05',
+                                ):
+    df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=start_date,
+                                end_date=end_date)
+    # FIXME hardcode for testing features
+    df = df[TEST_FEATURES]
+    df.columns = RENAME_FEATURES
+    df = df.dropna()
+
+    # train_end_dt_str = '{0} 14:00:00'.format(train_end_date)
+    # train_df = df[df.UpdateTime <= train_end_dt_str]
+    # test_df = df[df.UpdateTime > train_end_dt_str]
+
+    std_model = param_model.std_model
+    transform_features = copy.deepcopy(RENAME_FEATURES)
+    dt_col = df[DT_COL_NAME]
+    transform_features.remove(DT_COL_NAME)
+    transform_features.remove(LABEL)
+
+    if df.shape[0] > 0:
+        std_df = pd.DataFrame(std_model.transform(df[transform_features]), columns=transform_features)
+        std_df[DT_COL_NAME] = list(df[DT_COL_NAME])
+        std_df[LABEL] = list(df[LABEL])
+        del df
+
+        data_loader, bins, dt_col = get_dataloader(df=std_df.dropna(), freq=freq, missing_threshold=missing_threshold,
+                                                   dt_col_name=DT_COL_NAME,
+                                                   if_filtered=True, if_train=False, bins=param_model.bins)
+    else:
+        data_loader = None
+    return data_loader, bins, dt_col
 
 
 @timeit
@@ -273,7 +312,6 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
 
     df_label = df[[LABEL]].resample(freq, label='left').sum().replace(0.0, np.nan).dropna()
 
-    # TODO standardize
     if if_train:
         df_label[LABEL], bins = pd.qcut(df_label['label'], q=3, labels=[0, 1, 2], retbins=True)
     else:
@@ -281,8 +319,14 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
 
     selected_cols = copy.deepcopy(cols)
     selected_cols.remove(LABEL)
-    selected_cols.remove(dt_col_name)
+
     df = df[selected_cols].join(df_label)
+    dt_col_val = list(df[dt_col_name])
+
+    selected_cols.remove(dt_col_name)
+    selected_cols.append(LABEL)
+    df = df[selected_cols]
+
     notnull_labels = [idx for idx, item in enumerate(list(df[LABEL].notnull())) if item]
     img = []
     _len = len(notnull_labels)
@@ -290,6 +334,7 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
     _featuers = list(df.values)
     _index = list(df.index)
     ab_cnt = 0
+    ret_dt = []
     for i in range(1, _len):
         left, right = notnull_labels[i - 1], notnull_labels[i]
         s_len = right - left
@@ -306,10 +351,11 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
             _row.append(np.nan)
             _sample.append(_row)
         img.append(_sample)
+        ret_dt.append(dt_col_val[left])
     _tensor = torch.Tensor(np.array(img))
     _shuffle = True if if_train else False
     _data_loader = DataLoader(_tensor, batch_size=BATCH_SIZE, shuffle=_shuffle, drop_last=True)
-    return _data_loader, bins
+    return _data_loader, bins, ret_dt
 
 
 if __name__ == '__main__':

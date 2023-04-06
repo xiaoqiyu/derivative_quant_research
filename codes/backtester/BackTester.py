@@ -4,33 +4,42 @@
 # @Author  : rpyxqi@gmail.com
 # @Site    : 
 # @File    : BackTester.py
+
+import os
+import sys
+
+_base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../..")))
+sys.path.append(_base_dir)
+
 import time
 from .Factor import Factor
 from .Position import Position
 from codes.backtester.Account import Account
 from codes.strategy.ClfSignal import ClfSignal
-import pandas as pd
-import logging
+from codes.research.data_process.data_fetcher import DataFetcher
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
-import os
-from ..utils import utils as utils
-import codes.utils.define as define
+from codes.utils import helper
+from codes.utils.define import *
+from codes.utils.utils import *
 from copy import deepcopy
 import configparser
+
+uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
+data_fetcher = DataFetcher(uqer_client)
 
 
 def get_fill_ret(order=[], tick=1, mkt=[]):
     _order_type, _price, _lot = order
     bid_price1, ask_price1, bid_vol1, ask_vol1 = mkt[-4:]
     _last_price = mkt[3]
-    if _order_type == define.LONG:
+    if _order_type == LONG:
         if _lot <= ask_vol1 and (not _price or _price >= ask_price1):
             return [ask_price1, _lot]
         else:
             return [0, 0]
-    if _order_type == define.SHORT:
+    if _order_type == SHORT:
         if _lot <= bid_vol1 and (not _price or _price <= bid_price1):
             return [bid_price1, _lot]
         else:
@@ -57,6 +66,22 @@ def stop_profit_loss(risk_input: dict = {}, risk_conf: dict = {}) -> tuple:
         return _stop_upper, _stop_upper
 
 
+def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', trade_date: str = '2021-07-01') -> tuple:
+    data_fetcher.get_instrument_mkt(product_ids=[product_id], start_date=trade_date, end_date=trade_date)
+    _instruments = list(set(data_fetcher.instrument_cache['ticker']))
+    data_fetcher.get_instrument_contract(instrument_ids=_instruments, product_ids=[product_id])
+
+    tick_mkt = data_fetcher.load_tick_data(start_date=trade_date, end_date=trade_date, instrument_ids=_instruments,
+                                           main_con_flag=1, filter_start_time=None, filter_end_time=None,
+                                           if_filter=True)
+    tick_mkt = tick_mkt.set_index('InstrumentID').join(
+        data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
+    values = tick_mkt.values
+    for idx, item in enumerate(values):
+        _last = item[3]
+        _update_time = item[2]
+
+
 def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name: str = 'RegSignal',
                 result_fname_digest: str = '', options: dict = {},
                 plot_mkt: bool = True) -> tuple:
@@ -75,8 +100,7 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
     backtesting_config = ''
     if not options:
         try:
-            _strategy_conf = utils.get_path([define.CONF_DIR,
-                                             define.STRATEGY_CONF_NAME])
+            _strategy_conf = get_path([CONF_DIR, STRATEGY_CONF_NAME])
             config = configparser.ConfigParser()
             config.read(_strategy_conf)
             signal_lst = []
@@ -99,9 +123,9 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
         backtesting_config = '{0},{1}:{2}'.format(backtesting_config, key, value)
 
     # get contract and daily data
-    instrument_id_df = utils.get_instrument_ids(start_date=trade_date, end_date=trade_date, product_id=product_id)
+    instrument_id_df = get_instrument_ids(start_date=trade_date, end_date=trade_date, product_id=product_id)
     instrument_id, trade_date, exchange_cd = instrument_id_df.values[0]
-    _mul_num = utils.get_mul_num(instrument_id=instrument_id)
+    _mul_num = get_mul_num(instrument_id=instrument_id)
 
     # Load depth markets
     _tick_mkt_path = os.path.join(define.TICK_MKT_DIR, define.exchange_map.get(exchange_cd),
@@ -158,13 +182,14 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
         _last = item[3]
         _update_time = item[2]
         start_ts = time.time()
-        curr_factor =factor.update_factor(item, idx=idx, multiplier=_mul_num, lag_long=int(options.get('long_windows')),
-                             lag_short=int(options.get('short_windows')))
+        curr_factor = factor.update_factor(item, idx=idx, multiplier=_mul_num,
+                                           lag_long=int(options.get('long_windows')),
+                                           lag_short=int(options.get('short_windows')))
         end_ts = time.time()
         update_factor_time += (end_ts - start_ts)
 
         # FIXME double check
-        if not utils.is_trade(start_timestamp, end_timestamp, _update_time):
+        if not is_trade(start_timestamp, end_timestamp, _update_time):
             # print(_update_time, 'not trade time--------------')
             continue
 
@@ -386,7 +411,7 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
         ax2 = ax1.twinx()
         ax2.plot(_idx_lst[define.PLT_START:define.PLT_END], factor.trend_short[define.PLT_START:define.PLT_END], 'r')
 
-        _ret_path = utils.get_path([define.RESULT_DIR, define.BT_DIR, '{0}_{1}.jpg'.format(instrument_id, trade_date)])
+        _ret_path = get_path([define.RESULT_DIR, define.BT_DIR, '{0}_{1}.jpg'.format(instrument_id, trade_date)])
         plt.savefig(_ret_path)
     long_open, short_open, correct_long_open, wrong_long_open, correct_short_open, wrong_short_open = 0, 0, 0, 0, 0, 0
     total_fee = 0.0
@@ -434,7 +459,7 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
     # _key = '{0}_{1}'.format(trade_date, instrument_id)
     # result_fname_digest = hashlib.sha256(bytes(backtesting_config, encoding='utf-8')).hexdigest()
     # f.write("{0}:{1}\n".format(backtesting_config, result_fname_digest))
-    _ret_path = utils.get_path([define.RESULT_DIR, define.BT_DIR, '{0}.csv'.format(result_fname_digest)])
+    _ret_path = get_path([define.RESULT_DIR, define.BT_DIR, '{0}.csv'.format(result_fname_digest)])
     try:
         result_df = pd.read_csv(_ret_path)
     except Exception as ex:
@@ -461,3 +486,8 @@ def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name
     result_df.to_csv(_ret_path, index=False)
     ret = (total_return, account.fee, precision, account.transaction)
     return ret
+
+
+if __name__ == '__main__':
+    # backtesting()
+    backtest_quick(data_fetcher=data_fetcher, product_id='rb', trade_date='2021-07-01')

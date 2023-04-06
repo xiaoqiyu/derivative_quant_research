@@ -128,16 +128,16 @@ def cal_cos(x: list, turn_idx: list, turn_val: list) -> list:
 
 
 @timeit
-def calculate_raw_features(data_fetch: DataFetcher = None, product_id: str = '', instrument_id: str = '',
+def calculate_raw_features(data_fetcher: DataFetcher = None, product_id: str = '', instrument_id: str = '',
                            start_date: str = '', end_date: str = ''):
-    data_fetch.get_instrument_mkt(product_ids=[product_id], start_date=start_date, end_date=end_date)
-    _instruments = list(set(data_fetch.instrument_cache['ticker']))
-    data_fetch.get_instrument_contract(instrument_ids=_instruments, product_ids=[product_id])
+    data_fetcher.get_instrument_mkt(product_ids=[product_id], start_date=start_date, end_date=end_date)
+    _instruments = list(set(data_fetcher.instrument_cache['ticker']))
+    data_fetcher.get_instrument_contract(instrument_ids=_instruments, product_ids=[product_id])
 
-    tick_mkt = data_fetch.load_tick_data(start_date=start_date, end_date=end_date, instrument_ids=_instruments,
-                                         main_con_flag=1, filter_start_time=None, filter_end_time=None, if_filter=True)
+    tick_mkt = data_fetcher.load_tick_data(start_date=start_date, end_date=end_date, instrument_ids=_instruments,
+                                           main_con_flag=1, filter_start_time=None, filter_end_time=None, if_filter=True)
     tick_mkt = tick_mkt.set_index('InstrumentID').join(
-        data_fetch.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
+        data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
     # _mul_num = utils.get_mul_num(instrument_id) or 1
     tick_mkt['vwap'] = (tick_mkt['Turnover'] / tick_mkt['Volume']) / tick_mkt['contMultNum']
     tick_mkt['wap'] = (tick_mkt['BidPrice1'] * tick_mkt['AskVolume1'] + tick_mkt['AskPrice1'] * tick_mkt[
@@ -199,7 +199,7 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
                             train_end_date: str = '2021-07-05',
                             test_start_date: str = '',
                             test_end_date: str = ''):
-    df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=train_start_date,
+    df = calculate_raw_features(data_fetcher=data_fetcher, product_id=product_id, start_date=train_start_date,
                                 end_date=test_end_date)
 
     # TODO read feature from cache for testing
@@ -257,7 +257,7 @@ def gen_predict_feature_dataset(data_fetcher: DataFetcher = None, param_model=No
                                 start_date: str = '',
                                 end_date: str = '2021-07-05',
                                 ):
-    df = calculate_raw_features(data_fetch=data_fetcher, product_id=product_id, start_date=start_date,
+    df = calculate_raw_features(data_fetcher=data_fetcher, product_id=product_id, start_date=start_date,
                                 end_date=end_date)
     # FIXME hardcode for testing features
     df = df[TEST_FEATURES]
@@ -367,7 +367,7 @@ if __name__ == '__main__':
 
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     data_fetch = DataFetcher(uqer_client)
-    df_features = calculate_raw_features(data_fetch=data_fetch, product_id=product_id, start_date=start_date,
+    df_features = calculate_raw_features(data_fetcher=data_fetch, product_id=product_id, start_date=start_date,
                                          end_date=end_date)
     df_features.to_csv(feature_path, index=False)
 

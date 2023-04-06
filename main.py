@@ -237,10 +237,7 @@ def backtest(start_date: str = '20210707', end_date: str = '20210709', product_i
 
 
 if __name__ == "__main__":
-    w_wss_data = w.vba_wss("300866.SZ",
-                           "tot_oper_rev,oper_rev,net_profit_is,tot_assets,inventories,acct_rcv,arturndays,apturndays,invturn,invturndays,grossprofitmargin,expensetosales,cogstosales,netprofitmargin,ev,mkt_cap_ard,pe_ttm,ps_ttm,ev2_to_ebitda,val_evtoebitda2",
-                           "unit=1;rptDate=20211231;rptType=1;tradeDate=20220703")
-    print(w_wss_data)
+
     # data_visialize()
     start_date = '20210701'
     bt_start_date = '20210707'

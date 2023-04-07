@@ -9,3 +9,6 @@
 [2023-04-06 15:23:24,078] [codes.research.data_process.data_fetcher] [WARNING] [tick mkt path not exist:G:\future\FutAC_TickKZ_PanKou_Daily_202107\sc\rb2110_20210713.csv] [data_fetcher.py:105]
 [2023-04-06 15:23:24,079] [codes.research.data_process.data_fetcher] [WARNING] [tick mkt path not exist:G:\future\FutAC_TickKZ_PanKou_Daily_202107\sc\rb2110_20210714.csv] [data_fetcher.py:105]
 [2023-04-06 15:23:24,079] [codes.research.data_process.data_fetcher] [WARNING] [tick mkt path not exist:G:\future\FutAC_TickKZ_PanKou_Daily_202107\sc\rb2110_20210715.csv] [data_fetcher.py:105]
+[2023-04-07 13:33:30,079] [codes.research.data_process.data_fetcher] [WARNING] [tick mkt path not exist:G:\future\FutAC_TickKZ_PanKou_Daily_202107\sc\rb2110_20210701.csv] [data_fetcher.py:105]
+[2023-04-07 13:33:30,080] [codes.research.data_process.data_fetcher] [WARNING] [tick mkt path not exist:G:\future\FutAC_TickKZ_PanKou_Daily_202107\sc\rb2110_20210702.csv] [data_fetcher.py:105]
+[2023-04-07 13:33:30,080] [codes.research.data_process.data_fetcher] [WARNING] [tick mkt path not exist:G:\future\FutAC_TickKZ_PanKou_Daily_202107\sc\rb2110_20210705.csv] [data_fetcher.py:105]

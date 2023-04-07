@@ -57,6 +57,7 @@ class ClfSignal(Signal):
         fee = (open_fee + close_to_fee) / multiplier
         fee = 0  # FIXME remove the hardcode, consider fee in strop profit and loss
         _position = self.position.get_position(instrument_id)
+
         _sec = int(self.factor.update_time[-1].split()[-1].split('.')[0][-2:])
         _min = int(self.factor.update_time[-1].split()[-1].split('.')[0][-5:-3])
         # risk check

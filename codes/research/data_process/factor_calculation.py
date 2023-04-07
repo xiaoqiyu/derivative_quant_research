@@ -135,7 +135,8 @@ def calculate_raw_features(data_fetcher: DataFetcher = None, product_id: str = '
     data_fetcher.get_instrument_contract(instrument_ids=_instruments, product_ids=[product_id])
 
     tick_mkt = data_fetcher.load_tick_data(start_date=start_date, end_date=end_date, instrument_ids=_instruments,
-                                           main_con_flag=1, filter_start_time=None, filter_end_time=None, if_filter=True)
+                                           main_con_flag=1, filter_start_time=None, filter_end_time=None,
+                                           if_filter=True)
     tick_mkt = tick_mkt.set_index('InstrumentID').join(
         data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
     # _mul_num = utils.get_mul_num(instrument_id) or 1
@@ -308,7 +309,8 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
     # df.index = pd.to_datetime(df['time'])
     # TODO 1. 需要再filter 掉10：15-10：30；2.不按日处理的话，跨日的第一个sample需要去掉？不然就变成前一个交易日的收盘前的行情预测下一个交易日（夜盘）的开盘走势
     if if_filtered:
-        df = pd.concat([df.loc[time(9, 30): time(11, 30)], df.loc[time(21, 0):time(23, 0)]])
+        df = pd.concat(
+            [df.loc[time(9, 30): time(11, 30)], df.loc[time(13, 30): time(15, 0)], df.loc[time(21, 0):time(23, 0)]])
 
     df_label = df[[LABEL]].resample(freq, label='left').sum().replace(0.0, np.nan).dropna()
 

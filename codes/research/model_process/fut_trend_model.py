@@ -281,6 +281,9 @@ def stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2
         dt_cols = [item.split() for item in dt_cols]
         dt_cols = ['{0}_{1}'.format(item[0], item[1].split('.')[0]) for item in dt_cols]
         y = model.predict(data_loader.dataset[:, :, :-1])
+
+    _signal_path = os.path.join(_base_dir, 'data\models\\tsmodels\\signal_{0}.csv'.format(product_id))
+    pd.DataFrame({'datetime': dt_cols, 'signal': y.tolist()}).to_csv(_signal_path, index=False)
     return dict(zip(dt_cols, y.tolist()))
 
 
@@ -293,6 +296,5 @@ def train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_da
 if __name__ == '__main__':
     # train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-31')
     # x = torch.randn(5, 120, 15, device=device)
-    y = stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-07-02')
+    y = stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-07-05')
     pprint.pprint(y)
-

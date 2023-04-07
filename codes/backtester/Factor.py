@@ -10,20 +10,53 @@ import pandas
 import math
 from codes.utils import utils as utils
 import codes.utils.define as define
-import collections
 import copy
+
+
+class rqueue(object):
+    def __init__(self, size):
+        self.size = size
+        self.lst = []
+        self.curr_size = 0
+
+    def append(self, val):
+        if self.curr_size < self.size:
+            self.lst.append(val)
+            self.curr_size += 1
+        else:
+            if self.lst:
+                self.lst.pop(0)
+                self.lst.append(val)
+            else:
+                pass
+
+    def pop(self, idx):
+        # TODO add verify
+        self.curr_size -= 1
+        return self.lst.pop(idx)
+
+    def get(self, idx):
+        # if not 0 <= idx < self.curr_size:
+        #     raise ValueError('indx not valid')
+        return self.lst[idx]
+
+    def rq_size(self):
+        return self.curr_size
+
+    def get_lst(self):
+        return self.lst
 
 
 class Factor(object):
     def __init__(self, product_id='m', instrument_id='', trade_date='', long_windows=600, short_windows=120):
         # same variables in live
-        self.last_price = collections.deque(long_windows)  # xxx_circular_ptr
-        self.mid_price = collections.deque(long_windows)
-        self.spread = collections.deque(long_windows)
-        self.buy_vol = collections.deque(long_windows)
-        self.sell_vol = collections.deque(long_windows)
-        self.turnover = collections.deque(long_windows)
-        self.vol = collections.deque(long_windows)
+        self.last_price = rqueue(long_windows)  # xxx_circular_ptr
+        self.mid_price = rqueue(long_windows)
+        self.spread = rqueue(long_windows)
+        self.buy_vol = rqueue(long_windows)
+        self.sell_vol = rqueue(long_windows)
+        self.turnover = rqueue(long_windows)
+        self.vol = rqueue(long_windows)
         self.long_windows = long_windows
         self.short_windows = short_windows
         self.curr_factor = []
@@ -80,7 +113,7 @@ class Factor(object):
         vol = tick[7]  # 当前成交量，和live 不同
         turnover = tick[6]  # 当前成交额，和live不同
         _update_time = tick[2]
-        bid_price1, ask_price1, bid_vol1, ask_vol1 = tick[-4:]
+        bid_price1, ask_price1, bid_vol1, ask_vol1 = tick[-5:-1]
 
         # same var with live
         _curr_last = tick[3]
@@ -113,7 +146,7 @@ class Factor(object):
         _vol_short = 0.0
 
         _curr_spread = ask_price1 - bid_price1
-        _curr_vwap = turnover / vol  # FIXME check the calculation with live
+        _curr_vwap = turnover / vol if vol > 0 else 0  # FIXME check the calculation with live
         _curr_mid = (ask_price1 * bid_vol1 + bid_price1 * ask_vol1) / (ask_vol1 + bid_vol1)
 
         # update from last factor, start from the 2nd tick
@@ -124,7 +157,8 @@ class Factor(object):
             _log_return = math.log(_curr_last) - math.log(self.last_factor[0])
             _mid_log_return = math.log(_curr_mid) - math.log(self.last_factor[4])
 
-        cir_size = len(self.last_price)
+        # cir_size = len(self.last_price) ==
+        cir_size = self.last_price.rq_size()
         _curr_max = max(_prev_max, _curr_last)
         _curr_min = min(_prev_min, _curr_last)
 
@@ -132,26 +166,26 @@ class Factor(object):
             pass
 
         if cir_size >= self.long_windows:
-            _log_return_long = self.last_factor[8] + _log_return - math.log(self.last_price[1]) - math.log(
-                self.last_price[1])
+            _log_return_long = self.last_factor[8] + _log_return - math.log(self.last_price.get(1)) - math.log(
+                self.last_price.get(1))
             _mid_log_return_long = self.last_factor[10] + _mid_log_return - math.log(self.mid_price[1]) - math.log(
                 self.mid_price[1])
-            _log_return_short = self.last_factor[7] + _log_return - math.log(self.last_price[1]) - math.log(
-                self.last_price[0])
+            _log_return_short = self.last_factor[7] + _log_return - math.log(self.last_price.get(1)) - math.log(
+                self.last_price.get(0))
             _mid_log_return_short = self.last_factor[9] + _mid_log_return - math.log(self.mid_price[1]) - math.log(
                 self.mid_price[0])
             _turnover_long = sum(self.turnover[-self.long_windows:])  # TODO different from live
             _turnover_short = sum(self.turnover[-self.short_windows:])  # TODO
-            _vol_long = sum(self.vol[-self.long_windows:])
-            _vol_short = sum(self.vol[-self.short_windows:])
+            _vol_long = sum(self.vol.get_lst()[-self.long_windows:])
+            _vol_short = sum(self.vol.get_lst()[-self.short_windows:])
             _ma_long = _turnover_long / _vol_long
             _ma_short = _turnover_short / _vol_short
             _ma_ls_diff_curr = _ma_short - _ma_long
             _ma_ls_diff_last = self.last_factor[11] - self.last_factor[12]
         elif cir_size >= self.short_windows:
             _ma_long = _curr_vwap
-            _log_return_short = self.last_factor[7] + _log_return - math.log(self.last_price[1]) - math.log(
-                self.last_price[0])
+            _log_return_short = self.last_factor[7] + _log_return - math.log(self.last_price.get(1)) - math.log(
+                self.last_price.get(0))
 
             _mid_log_return_short = self.last_factor[9] + _mid_log_return - math.log(self.mid_price[1]) - math.log(
                 self.mid_price[0])
@@ -166,6 +200,7 @@ class Factor(object):
         self.mid_price.append(_curr_mid)
         self.turnover.append(_curr_turnover)
         self.vol.append(_curr_vol)
+        self.update_time.append(_update_time)
 
         ret_factor = copy.deepcopy(self.curr_factor)
         # currentfactorupdate
@@ -331,17 +366,23 @@ class Factor(object):
         pass
 
     def get_factor(self):
-        return {'slope': self.slope[-1],
-                'vwap': self.vwap[-1],
-                'spread': self.spread[-1],
-                'b2s_vol': self.b2s_vol[-1],
-                'cos': self.cos[-1],
-                'trend_ls_ratio': self.trend_ls_ratio[-1],
-                'log_return': self.log_return[-1],
-                'log_return_0': self.log_return10[-1],
-                'wap_log_return': self.mid_log_return[-1],
+        return {
+            'update_time': self.update_time[-1],
+            'last_price': self.last_price.get(-1)
+        }
 
-                }
+        # return {'slope': self.slope[-1],
+        #         'vwap': self.vwap[-1],
+        #         'spread': self.spread[-1],
+        #         'b2s_vol': self.b2s_vol[-1],
+        #         'cos': self.cos[-1],
+        #         'trend_ls_ratio': self.trend_ls_ratio[-1],
+        #         'log_return': self.log_return[-1],
+        #         'log_return_0': self.log_return10[-1],
+        #         'wap_log_return': self.mid_log_return[-1],
+        #         'update_time': self.update_time[-1],
+        #         'last_price': self.last_price[-1]
+        #         }
 
     def cache_factor(self):
         # factor_df = pandas.DataFrame({'last_price': self.last_price, 'vwap': self.vwap, 'upper_bound': self.upper_bound,

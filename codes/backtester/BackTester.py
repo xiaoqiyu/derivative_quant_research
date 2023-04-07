@@ -12,9 +12,10 @@ _base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../..")))
 sys.path.append(_base_dir)
 
 import time
-from .Factor import Factor
-from .Position import Position
+from codes.backtester.Factor import Factor
+from codes.backtester.Position import Position
 from codes.backtester.Account import Account
+from codes.strategy.MinSignal import MinSignal
 from codes.strategy.ClfSignal import ClfSignal
 from codes.research.data_process.data_fetcher import DataFetcher
 import matplotlib.pyplot as plt
@@ -32,7 +33,7 @@ data_fetcher = DataFetcher(uqer_client)
 
 def get_fill_ret(order=[], tick=1, mkt=[]):
     _order_type, _price, _lot = order
-    bid_price1, ask_price1, bid_vol1, ask_vol1 = mkt[-4:]
+    bid_price1, ask_price1, bid_vol1, ask_vol1 = mkt[-5:-1]
     _last_price = mkt[3]
     if _order_type == LONG:
         if _lot <= ask_vol1 and (not _price or _price >= ask_price1):
@@ -56,7 +57,7 @@ def stop_profit_loss(risk_input: dict = {}, risk_conf: dict = {}) -> tuple:
     :param risk_conf:
     :return:
     '''
-    _last_price = risk_input.get('last_price')[-120:]
+    _last_price = risk_input.get('last_price').get_lst()[-120:]
     _range = max(_last_price) - min(_last_price)
     _stop_lower = risk_conf.get('stop_lower')
     _stop_upper = risk_conf.get('stop_upper')
@@ -66,20 +67,165 @@ def stop_profit_loss(risk_input: dict = {}, risk_conf: dict = {}) -> tuple:
         return _stop_upper, _stop_upper
 
 
-def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', trade_date: str = '2021-07-01') -> tuple:
+def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', trade_date: str = '2021-07-01',
+                   options: dict = {}) -> tuple:
     data_fetcher.get_instrument_mkt(product_ids=[product_id], start_date=trade_date, end_date=trade_date)
     _instruments = list(set(data_fetcher.instrument_cache['ticker']))
     data_fetcher.get_instrument_contract(instrument_ids=_instruments, product_ids=[product_id])
-
+    instrument_id = list(data_fetcher.instrument_cache[data_fetcher.instrument_cache.mainCon == 1]['ticker'])[0]
     tick_mkt = data_fetcher.load_tick_data(start_date=trade_date, end_date=trade_date, instrument_ids=_instruments,
                                            main_con_flag=1, filter_start_time=None, filter_end_time=None,
                                            if_filter=True)
     tick_mkt = tick_mkt.set_index('InstrumentID').join(
         data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
     values = tick_mkt.values
+
+    # init factor, position account signal
+    factor = Factor(product_id=product_id, instrument_id=instrument_id, trade_date=trade_date)
+    position = Position()
+    account = Account()
+    signal = MinSignal(factor=factor, position=position, instrument_id=instrument_id,
+                       trade_date=trade_date, product_id=product_id)
+
+    # Init backtest params
+    open_fee = float(options.get('open_fee') or 3.0)
+    close_t0_fee = float(options.get('close_t0_fee') or 0.0)
+    fee = open_fee + close_t0_fee
+    start_timestamp = options.get('start_timestamp') or '09:05:00'
+    start_datetime = '{0} {1}'.format(trade_date, start_timestamp)
+    end_timestamp = options.get('end_timestamp') or '22:50:00'
+    # end_datetime = '{0} {1}'.format(trade_date, end_timestamp)
+    # delay_sec = int(options.get('delay_sec')) or 5
+    total_return = 0.0
+    close_price = 0.0  # not the true close price, to close the position
+    _text_lst = ['long_open', 'long_close', 'short_open', 'short_close']
+    update_factor_time = 0.0
+    get_signal_time = 0.0
+    signal_delay = 0
+    # conf_signal_delay = int(options.get('signal_delay'))
     for idx, item in enumerate(values):
         _last = item[3]
         _update_time = item[2]
+        _mul_num = item[-1]
+        curr_factor = factor.update_factor(item, idx=idx, multiplier=item[-1], lag_long=SEQUENCE,
+                                           lag_short=SEC_INTERVAL)
+
+        close_price = _last
+        close_timestamp = _update_time
+        start_ts = time.time()
+
+        options.update({'instrument_id': instrument_id})
+        options.update({'multiplier': item[-1]})
+        options.update({'fee': 5})
+        options.update({'factor': curr_factor})
+        options.update({'trade_date': trade_date})
+        s1 = time.time()
+        options.update({'stop_lower': 2.0})
+        options.update({'stop_upper': 20.0})
+        stop_profit, stop_loss = stop_profit_loss({'last_price': factor.last_price}, options)
+        options.update({'stop_profit': stop_profit, 'stop_loss': stop_loss})
+
+        # Get signal
+        _signal = signal(params=options)
+        if _signal.signal_type == define.LONG_OPEN:
+
+            _fill_price, _fill_lot = get_fill_ret(order=[LONG, _signal.price, _signal.vol], tick=1, mkt=item)
+            print("Long Open with update time:{0},filled price:{1}, filled lot:{2}------".format(_update_time,
+                                                                                                 _fill_price,
+                                                                                                 _fill_lot))
+            if _fill_lot > 0:
+                dt_last_trans_time = datetime.strptime(_update_time.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                account.add_transaction(
+                    [idx, instrument_id, _text_lst[define.LONG_OPEN], _last, _fill_price, _fill_lot, _fill_price,
+                     open_fee * _fill_lot,
+                     _update_time.split(' ')[-1],
+                     _update_time.split(' ')[-1],
+                     0.0, 0.0])
+                position.update_position(instrument_id=instrument_id, long_short=LONG, price=_fill_price,
+                                         timestamp=_update_time, vol=_fill_lot, order_type=LONG_OPEN)
+                account.update_fee(open_fee * _fill_lot)
+
+        elif _signal.signal_type == define.SHORT_OPEN:
+
+            _fill_price, _fill_lot = get_fill_ret(order=[SHORT, _signal.price, _signal.vol], tick=1, mkt=item)
+            print("Short Open with update time:{0},filled price:{1}, filled lot:{2}------".format(_update_time,
+                                                                                                  _fill_price,
+                                                                                                  _fill_lot))
+            if _fill_lot > 0:
+                dt_last_trans_time = datetime.strptime(_update_time.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                account.add_transaction(
+                    [idx, instrument_id, _text_lst[SHORT_OPEN], _last, _fill_price, _fill_lot, _fill_price,
+                     open_fee * _fill_lot,
+                     _update_time.split(' ')[-1],
+                     _update_time.split(' ')[-1],
+                     0.0, 0.0])
+                position.update_position(instrument_id=instrument_id, long_short=SHORT, price=_fill_price,
+                                         timestamp=_update_time,
+                                         vol=_fill_lot, order_type=SHORT_OPEN)
+                account.update_fee(open_fee * _fill_lot)
+
+        elif _signal.signal_type == define.LONG_CLOSE:
+            print("Long Close with update time:{0}------".format(_update_time))
+            _pos = position.get_position_side(instrument_id, define.LONG)
+            if _pos:
+                dt_curr_time = datetime.strptime(_update_time.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                try:
+                    dt_last_trans_time = datetime.strptime(_pos[2], '%H:%M:%S')
+                except Exception as ex:
+                    dt_last_trans_time = datetime.strptime(_pos[2].split('.')[0], '%Y-%m-%d %H:%M:%S')
+                else:
+                    pass
+                holding_time = (dt_curr_time - dt_last_trans_time).seconds
+
+                _fill_price, _fill_lot = get_fill_ret(order=[SHORT, _signal.price, _signal.vol], tick=1,
+                                                      mkt=item)
+                if _fill_lot > 0:
+                    dt_last_trans_time = datetime.strptime(_update_time.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                    # print('transaction time=>', dt_last_trans_time)
+                    curr_return = (((_fill_price - _pos[1]) * _mul_num) - fee) * _fill_lot
+                    total_return += curr_return
+
+                    account.add_transaction(
+                        [idx, instrument_id, _text_lst[LONG_CLOSE], _last, _fill_price, _fill_lot, _pos[1],
+                         close_t0_fee * _fill_lot,
+                         _pos[2].split(' ')[-1],
+                         _update_time.split(' ')[-1],
+                         holding_time,
+                         curr_return])
+                    position.update_position(instrument_id=instrument_id, long_short=SHORT, price=_fill_price,
+                                             timestamp=_update_time, vol=_fill_lot, order_type=LONG_CLOSE)
+                    account.update_fee(close_t0_fee * _fill_lot)
+        elif _signal.signal_type == define.SHORT_CLOSE:
+            print("Short Close with update time:{0}------".format(_update_time))
+            _pos = position.get_position_side(instrument_id, SHORT)
+            if _pos:
+                dt_curr_time = datetime.strptime(_update_time.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                try:
+                    dt_last_trans_time = datetime.strptime(_pos[2], '%H:%M:%S')
+                except Exception as ex:
+                    dt_last_trans_time = datetime.strptime(_pos[2].split('.')[0], '%Y-%m-%d %H:%M:%S')
+                else:
+                    pass
+                holding_time = (dt_curr_time - dt_last_trans_time).seconds
+
+                _fill_price, _fill_lot = get_fill_ret(order=[LONG, _signal.price, _signal.vol], tick=1, mkt=item)
+                if _fill_lot > 0:
+                    dt_last_trans_time = datetime.strptime(_update_time.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                    curr_return = ((_pos[1] - _fill_price) * _mul_num - fee) * _fill_lot
+                    total_return += curr_return
+                    account.add_transaction(
+                        [idx, instrument_id, _text_lst[SHORT_CLOSE], _last, _fill_price, _fill_lot, _pos[1],
+                         close_t0_fee * _fill_lot,
+                         _pos[2].split(' ')[-1],
+                         _update_time,
+                         holding_time,
+                         curr_return])
+                    position.update_position(instrument_id=instrument_id, long_short=LONG, price=_fill_price,
+                                             timestamp=_update_time, vol=_fill_lot, order_type=SHORT_CLOSE)
+                    account.update_fee(close_t0_fee * _fill_lot)
+        else:  # NO_SIGNAL
+            pass
+    print(total_return)
 
 
 def backtesting(product_id: str = 'm', trade_date: str = '20210401', signal_name: str = 'RegSignal',

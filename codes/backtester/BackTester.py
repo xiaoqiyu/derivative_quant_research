@@ -89,8 +89,8 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
 
     # Init backtest params
     open_fee = float(options.get('open_fee') or 3.0)
-    close_t0_fee = float(options.get('close_t0_fee') or 0.0)
-    fee = open_fee + close_t0_fee
+    close_fee = float(options.get('close_fee') or 0.0)
+    fee = open_fee + close_fee
     start_timestamp = options.get('start_timestamp') or '09:05:00'
     start_datetime = '{0} {1}'.format(trade_date, start_timestamp)
     end_timestamp = options.get('end_timestamp') or '22:50:00'
@@ -120,10 +120,11 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
         options.update({'factor': curr_factor})
         options.update({'trade_date': trade_date})
         s1 = time.time()
-        options.update({'stop_lower': 2.0})
-        options.update({'stop_upper': 20.0})
-        stop_profit, stop_loss = stop_profit_loss({'last_price': factor.last_price}, options)
-        options.update({'stop_profit': stop_profit, 'stop_loss': stop_loss})
+        # TODO double check the stop logic, seems complicated
+        # options.update({'stop_lower': 2.0})
+        # options.update({'stop_upper': 20.0})
+        # stop_profit, stop_loss = stop_profit_loss({'last_price': factor.last_price}, options)
+        # options.update({'stop_profit': stop_profit, 'stop_loss': stop_loss})
 
         # Get signal
         _signal = signal(params=options)
@@ -187,14 +188,14 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
 
                     account.add_transaction(
                         [idx, instrument_id, _text_lst[LONG_CLOSE], _last, _fill_price, _fill_lot, _pos[1],
-                         close_t0_fee * _fill_lot,
+                         close_fee * _fill_lot,
                          _pos[2].split(' ')[-1],
                          _update_time.split(' ')[-1],
                          holding_time,
                          curr_return])
                     position.update_position(instrument_id=instrument_id, long_short=SHORT, price=_fill_price,
                                              timestamp=_update_time, vol=_fill_lot, order_type=LONG_CLOSE)
-                    account.update_fee(close_t0_fee * _fill_lot)
+                    account.update_fee(close_fee * _fill_lot)
         elif _signal.signal_type == define.SHORT_CLOSE:
             print("Short Close with update time:{0}------".format(_update_time))
             _pos = position.get_position_side(instrument_id, SHORT)
@@ -215,16 +216,55 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                     total_return += curr_return
                     account.add_transaction(
                         [idx, instrument_id, _text_lst[SHORT_CLOSE], _last, _fill_price, _fill_lot, _pos[1],
-                         close_t0_fee * _fill_lot,
+                         close_fee * _fill_lot,
                          _pos[2].split(' ')[-1],
                          _update_time,
                          holding_time,
                          curr_return])
                     position.update_position(instrument_id=instrument_id, long_short=LONG, price=_fill_price,
                                              timestamp=_update_time, vol=_fill_lot, order_type=SHORT_CLOSE)
-                    account.update_fee(close_t0_fee * _fill_lot)
+                    account.update_fee(close_fee * _fill_lot)
         else:  # NO_SIGNAL
             pass
+    long_open, short_open, correct_long_open, wrong_long_open, correct_short_open, wrong_short_open = 0, 0, 0, 0, 0, 0
+    total_fee = 0.0
+    total_holding_time = 0.0
+    max_holding_time = -np.inf
+    min_holding_time = np.inf
+    for item in account.transaction:
+        if item[2] == 'long_open':
+            long_open += 1
+        elif item[2] == 'short_open':
+            short_open += 1
+        elif item[2] == 'long_close':
+            total_holding_time += item[-2]
+            max_holding_time = max(max_holding_time, item[-2])
+            min_holding_time = min(min_holding_time, item[-2])
+            if item[-1] > 0:
+                correct_long_open += 1
+            else:
+                wrong_long_open += 1
+        else:  # short close
+            total_holding_time += item[-2]
+            max_holding_time = max(max_holding_time, item[-2])
+            min_holding_time = min(min_holding_time, item[-2])
+            if item[-1] > 0:
+                correct_short_open += 1
+            else:
+                wrong_short_open += 1
+    average_holding_time = total_holding_time / (long_open + short_open) if long_open + short_open > 0 else 0.0
+    print("******************back test models for date:{0}*********************".format(trade_date))
+    print('trade date', trade_date)
+    print(long_open, short_open, correct_long_open, wrong_long_open, correct_short_open, wrong_short_open)
+    print('total return:', total_return)
+    print('total fee:', account.fee)
+    # print('total risk:', total_risk)
+    print('update factor time:', update_factor_time)
+    print('get signal time:', get_signal_time)
+    print("average_holding_time:", average_holding_time)
+    print("max_holding_time:", max_holding_time)
+    print("min_holding_time:", min_holding_time)
+    print("******************back test models for date:{0}*********************".format(trade_date))
     print(total_return)
 
 

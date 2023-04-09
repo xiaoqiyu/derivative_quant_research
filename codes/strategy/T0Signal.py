@@ -7,8 +7,8 @@
 
 from codes.strategy.Signal import Signal
 import codes.utils.define as define
-from codes.backtester import Factor
-from codes.backtester.Position import Position
+from codes.backtest import Factor
+from codes.backtest.Position import Position
 
 
 class TOSignal(Signal):

@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 from uqer import DataAPI
 import matplotlib.pyplot as plt
-from codes import backtester as Account, backtester as Position
+from codes import backtest as Account, backtest as Position
 import codes.utils.define as define
 import copy
 

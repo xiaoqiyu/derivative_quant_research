@@ -6,7 +6,7 @@
 # @File    : main.py
 
 
-from codes.backtester import backtesting
+from codes.backtest import backtesting
 import logging
 import hashlib
 import time

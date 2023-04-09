@@ -17,6 +17,10 @@ import pandas as pd
 from codes.strategy.Signal import Signal
 from codes.strategy.Signal import SignalField
 from codes.utils.define import *
+from codes.utils.logger import Logger
+
+_log_path = os.path.join(_base_dir, 'data\logs\{0}'.format(os.path.split(__file__)[-1].strip('.py')))
+logger = Logger(_log_path, 'INFO', __name__).get_log()
 
 
 class MinSignal(Signal):
@@ -29,23 +33,16 @@ class MinSignal(Signal):
 
     def __call__(self, *args, **kwargs):
         params = kwargs.get('params')  # is options
-        # _k = params.get('tick')[2].split()[1].split('.')[0]
-        # _update_time = params.get('tick')[2]
-        curr_factor = params.get('factor')
+
+        # curr_factor = params.get('factor')
         _long, _short, long_price, short_price = 0, 0, 0.0, 0.0
         instrument_id = params.get('instrument_id')
-        # start_tick = int(params.get('start_tick')) or 2
-        stop_profit = float(params.get('stop_profit') or 10.0)
-        stop_loss = float(params.get('stop_loss') or 10.0)
-        multiplier = int(params.get('multiplier') or 10)
+        stop_profit = float(params.get('stop_profit') or 10.0)  # 这是价格
+        stop_loss = float(params.get('stop_loss') or 10.0)  # 这是价格
         risk_duration = int(params.get('risk_duration') or 30)
-        open_fee = float(params.get('open_fee') or 1.51)
-        close_to_fee = float(params.get('close_t0_fee') or 0.0)
         _vol_limit = params.get('vol_limit') or 5
 
-        fee = (open_fee + close_to_fee) / multiplier
-        # TODO fee 全部按照价格看
-        fee = 1  # FIXME remove the hardcode, consider fee in strop profit and loss
+        # 初始化现在持仓
         _position = self.position.get_position(instrument_id)
         if _position:
             for item in _position:
@@ -55,98 +52,125 @@ class MinSignal(Signal):
                 elif item[0] == SHORT:
                     short_price = item[1]
                     _short += item[3]
-
-        _order_data_field = SignalField()
+        _ins_vol = _long + _short
 
         _factor = self.factor.get_factor()
         _update_time = _factor.get('update_time')
         _last_price = _factor.get('last_price')
-        dt_key = _update_time.split('.')[0].replace(' ', '_')
-        pred_label = self.signal_map.get(dt_key)
-        _ins_vol = _long + _short
 
+        sec, msec = _update_time.split('.')
+        if int(msec) == 0:
+            dt_key = _update_time.split('.')[0].replace(' ', '_')
+            pred_label = self.signal_map.get(dt_key)
+        else:
+            pred_label = 1  # no signal
+
+        # risk check
         _sec = int(self.factor.update_time[-1].split()[-1].split('.')[0][-2:])
         _min = int(self.factor.update_time[-1].split()[-1].split('.')[0][-5:-3])
-        # risk check
         _check_stop_profit_loss = (_min * 60 + _sec) % risk_duration
+
+        _order_data_field = SignalField()
+
         if pred_label == 2:  # long signal
-            print("Get Long Signal=>", pred_label, 'long vol=>', _long, 'cur vol=>', _ins_vol, 'vol limit=>',
-                  _vol_limit,
-                  'last price=>', self.factor.last_price.get(-1), 'long price=>', long_price, 'short price=>', short_price,
-                  'stop profit=>', stop_profit, 'fee=>', fee)
+            logger.info(
+                "Long signal: curr_pos=>{0}, vol_limit=>{1},last_price=>{2}, long_price=>{3},short_price=>{4}, time=>{5}".format(
+                    _ins_vol, _vol_limit, _last_price, long_price, short_price, _update_time))
+            # logger.info("Get Long Signal=>", pred_label, 'long vol=>', _long, 'cur vol=>', _ins_vol, 'vol limit=>',
+            #             _vol_limit,
+            #             'last price=>', self.factor.last_price.get(-1), 'long price=>', long_price, 'short price=>',
+            #             short_price,
+            #             'stop profit=>', stop_profit)
+
             if _long and _ins_vol < _vol_limit:  # 多仓未达风险则继续开多
-                print("more long open")
+                logger.info("more long open")
                 _order_data_field.direction = LONG
                 _order_data_field.signal_type = LONG_OPEN
                 _order_data_field.vol = _vol_limit - _ins_vol
                 _order_data_field.price = 0  # market order
                 return _order_data_field
+            # TODO  这种情况需要考虑止盈条件吗？
             elif _short and self.factor.last_price.get(-1) < short_price - stop_profit:  # 空仓则平空, 佣金暂不在此考虑
-                print('short close')
+                logger.info('short close')
                 _order_data_field.direction = LONG
                 _order_data_field.signal_type = SHORT_CLOSE
                 _order_data_field.vol = _short
                 _order_data_field.price = 0
                 return _order_data_field
             elif not _long and _ins_vol < _vol_limit:  # 未持多仓且未达风险则开多仓
-                print('no pos, long open')
+                logger.info('no pos, long open')
                 _order_data_field.direction = LONG
                 _order_data_field.signal_type = LONG_OPEN
                 _order_data_field.vol = _vol_limit - _ins_vol
                 _order_data_field.price = 0  # market order
                 return _order_data_field
             else:
-                print('no action for long signal')
+                logger.info('no action for long signal')
                 pass
         elif pred_label == 0:  # short signal
-            print("Get Short Signal=>", pred_label, 'short pos=>', _short, 'cur pos=>', _ins_vol, 'vol limit=>',
-                  _vol_limit, 'last price=>', self.factor.last_price.get(-1), 'long price=>', long_price,
-                  'short price', short_price, 'stop profit=>', stop_profit, 'fee=>', fee)
+            logger.info(
+                "Short signal: curr_pos=>{0}, vol_limit=>{1},last_price=>{2}, long_price=>{3}, short_price=>{4} time=>{5}".format(
+                    _ins_vol, _vol_limit, _last_price, long_price, short_price, _update_time))
+            # logger.info("Get Short Signal=>", pred_label, 'short pos=>', _short, 'cur pos=>', _ins_vol, 'vol limit=>',
+            #             _vol_limit, 'last price=>', self.factor.last_price.get(-1), 'long price=>', long_price,
+            #             'short price', short_price, 'stop profit=>', stop_profit)
             if _short and _ins_vol < _vol_limit:  # 空仓未达风险则继续开空
-                print('more short open')
+                logger.info('more short open')
                 _order_data_field.direction = SHORT
                 _order_data_field.signal_type = SHORT_OPEN
                 _order_data_field.vol = _vol_limit - _ins_vol
                 _order_data_field.price = 0  # market order
                 return _order_data_field
+            # TODO  这种情况需要考虑止盈条件吗？
             elif _long and self.factor.last_price.get(-1) > long_price + stop_profit:  # 多仓则平多，佣金暂不在此考虑
-                print('long close')
+                logger.info('long close for profit')
                 _order_data_field.direction = SHORT
                 _order_data_field.signal_type = LONG_CLOSE
                 _order_data_field.vol = _long
                 _order_data_field.price = 0
                 return _order_data_field
             elif not _short and _ins_vol < _vol_limit:  # 未持空仓且未达风险则开空
-                print('no short, short open')
+                logger.info('no short, short open')
                 _order_data_field.direction = SHORT
                 _order_data_field.signal_type = SHORT_OPEN
                 _order_data_field.vol = _vol_limit - _ins_vol
                 _order_data_field.price = 0  # market order
                 return _order_data_field
             else:
-                print("no action for short signal")
+                logger.info("no action for short signal")
         else:  # no long short signal, check stop profit and loss
             pass
         if _check_stop_profit_loss == 0:
             if _position:
                 for item in _position:
                     if item[0] == LONG:
-                        # print('check close long')
-                        _is_close = (self.factor.last_price.get(-1) > item[1] + stop_profit + fee) or (
-                                self.factor.last_price.get(-1) < item[1] - stop_loss - fee)  # stop profit or stop  loss
+                        # logger.info('check close long')
+                        # 这里不考虑fee了，简化逻辑，在设置stop_profit 和 stop_loss时候考虑就行
+                        _is_close = (self.factor.last_price.get(-1) > item[1] + stop_profit) or (
+                                self.factor.last_price.get(-1) < item[1] - stop_loss)  # stop profit or stop  loss
                         if _is_close:
-                            print('long stop profit/loss, last=>', self.factor.last_price.get(-1), 'open price=>', item[1])
+                            logger.info(
+                                "Long Close Stop,close=>{0}, open=>{1}, update_time=>{2}".format(_last_price, item[1],
+                                                                                                 _update_time))
+                            # logger.info('long stop profit/loss, last=>', self.factor.last_price.get(-1), 'open price=>',
+                            #             item[1])
+                            #
                             _order_data_field.direction = SHORT
                             _order_data_field.signal_type = LONG_CLOSE
                             _order_data_field.vol = item[-1]
                             _order_data_field.price = 0
                             return _order_data_field
                     if item[0] == SHORT:
-                        # print('check close short')
-                        _is_close = (self.factor.last_price.get(-1) < item[1] - stop_profit - fee) or (
-                                self.factor.last_price.get(-1) > item[1] + stop_loss + fee)
+                        # logger.info('check close short')
+                        _is_close = (self.factor.last_price.get(-1) < item[1] - stop_profit) or (
+                                self.factor.last_price.get(-1) > item[1] + stop_loss)
                         if _is_close:
-                            print('short stop profit/loss, last=>', self.factor.last_price.get(-1), 'open price=>', item[1])
+                            logger.info(
+                                "Short Close Stop,close=>{0}, open=>{1}, update_time=>{2}".format(_last_price, item[1],
+                                                                                                  _update_time))
+                            # logger.info('short stop profit/loss, last=>', self.factor.last_price.get(-1),
+                            #             'open price=>',
+                            #             item[1])
                             _order_data_field.direction = LONG
                             _order_data_field.signal_type = SHORT_CLOSE
                             _order_data_field.vol = item[-1]

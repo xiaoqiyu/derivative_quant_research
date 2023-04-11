@@ -106,17 +106,18 @@ class RNNModel(object):
         return ret
 
     @timeit
-    def train_model(self, product_id: str = 'rb', start_date: str = '', end_date: str = ''):
+    def train_model(self, product_id: str = 'rb', start_date: str = '', end_date: str = '', train_end_date: str = '',
+                    train_base: bool = True):
         logger.info("Start train model for product:{0} from {1} to {2}".format(product_id, start_date, end_date))
-        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         rnn = RNN().to(device)  # 使用GPU或CPU
         optimizer = torch.optim.Adam(rnn.parameters(), lr=LR)  # optimize all rnn parameters
         loss_func = nn.CrossEntropyLoss()  # 分类问题
         _rnn_model_path = os.path.join(_base_dir,
                                        'data\models\\tsmodels\\{0}_{1}.tar'.format(self.model_name, product_id))
         # in one epoch not load checkpoint
-        # epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
-        #                                                                                       _rnn_model_path)
+        if not train_base:  # incremental training when there is already a base model
+            epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
+                                                                                                  _rnn_model_path)
         mult_step_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                                    milestones=[EPOCH // 2, EPOCH // 4 * 3], gamma=0.1)
         train_loss = []
@@ -125,14 +126,15 @@ class RNNModel(object):
         min_test_loss = np.inf
         _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
         param_model = ParamModel(_param_model_path)
-        param_model = param_model.load_model()
+        if not train_base:
+            param_model = param_model.load_model()
 
         test_predicts = []
         test_labels = []
         test_epoch = []
         # train_test_dates = self.get_train_test_dates(start_date=start_date, end_date=end_date)
         all_trade_dates = self.data_fetcher.get_all_trade_dates(start_date, end_date)
-        train_end_idx = int(len(all_trade_dates) * 0.7)
+        train_end_idx = int(len(all_trade_dates) * 0.7) if train_base else all_trade_dates.index(train_end_date)
         _train_end_date = all_trade_dates[train_end_idx]
         _test_start_date = all_trade_dates[train_end_idx + 1]
         logger.info(
@@ -287,14 +289,27 @@ def stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2
     return dict(zip(dt_cols, y.tolist()))
 
 
-def train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15'):
+def train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15', train_end_date='',
+              train_base=True):
     if model_name == 'rnn':
         ts_model = RNNModel(data_fetcher)
-        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date)
+        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date, train_end_date='',
+                             train_base=True)
+
+
+def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15',
+                                train_end_date='', infer_start_date=''):
+    if model_name == 'rnn':
+        ts_model = RNNModel(data_fetcher)
+        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date,
+                             train_end_date=train_end_date, train_base=False)
+        stacking_infer(product_id=product_id, start_date=infer_start_date, end_date=end_date)
 
 
 if __name__ == '__main__':
-    # train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-31')
-    # x = torch.randn(5, 120, 15, device=device)
-    y = stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-07-05')
-    pprint.pprint(y)
+    # train base, delete existing model file, it will train from scratch
+    train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-31', train_base=True)
+    incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15',
+                                train_end_date='', infer_start_date='')
+    # y = stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-07-05')
+    # pprint.pprint(y)

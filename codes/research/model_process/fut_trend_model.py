@@ -123,7 +123,7 @@ class RNNModel(object):
         train_loss = []
         test_loss = []
         # min_test_loss = cache_test_loss
-        min_test_loss = np.inf
+        min_test_loss = np.inf if train_base else cache_test_loss
         _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
         param_model = ParamModel(_param_model_path)
         if not train_base:
@@ -300,16 +300,18 @@ def train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_da
 def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15',
                                 train_end_date='', infer_start_date=''):
     if model_name == 'rnn':
-        ts_model = RNNModel(data_fetcher)
-        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date,
-                             train_end_date=train_end_date, train_base=False)
+        # ts_model = RNNModel(data_fetcher)
+        # ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date,
+        #                      train_end_date=train_end_date, train_base=False)
+        logger.info("start infer from {0} to {1}".format(infer_start_date, end_date))
         stacking_infer(product_id=product_id, start_date=infer_start_date, end_date=end_date)
 
 
 if __name__ == '__main__':
     # train base, delete existing model file, it will train from scratch
-    train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-31', train_base=True)
-    incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15',
-                                train_end_date='', infer_start_date='')
-    # y = stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-07-05')
-    # pprint.pprint(y)
+    # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-02-26', train_base=True)
+
+    dates = [('2021-03-01', '2021-03-05', '2021-03-08', '2021-03-12')]
+    for start_date, train_end_date, infer_start_date, end_date in dates:
+        incremental_train_and_infer(model_name='rnn', product_id='rb', start_date=start_date, end_date=end_date,
+                                    train_end_date=train_end_date, infer_start_date=infer_start_date)

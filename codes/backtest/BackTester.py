@@ -793,4 +793,4 @@ if __name__ == '__main__':
     # backtesting()
     import pprint
 
-    pprint.pprint(backtest_quick(data_fetcher=data_fetcher, product_id='rb', trade_date='2021-07-01'))
+    print(backtest_quick(data_fetcher=data_fetcher, product_id='rb', trade_date='2021-03-08'))

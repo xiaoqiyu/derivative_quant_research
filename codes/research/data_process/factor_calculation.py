@@ -27,6 +27,7 @@ from codes.research.data_process.data_fetcher import DataFetcher
 from codes.utils.helper import timeit
 from codes.utils.define import *
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def cal_oir(bid_price: list = [], bid_vol: list = [], ask_price: list = [], ask_vol: list = [],
             n_rows: int = 0) -> tuple:
@@ -354,7 +355,7 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
             _sample.append(_row)
         img.append(_sample)
         ret_dt.append(dt_col_val[left])
-    _tensor = torch.Tensor(np.array(img))
+    _tensor = torch.Tensor(np.array(img)).to(device)
     _shuffle = True if if_train else False
     _data_loader = DataLoader(_tensor, batch_size=BATCH_SIZE, shuffle=_shuffle, drop_last=True)
     return _data_loader, bins, ret_dt

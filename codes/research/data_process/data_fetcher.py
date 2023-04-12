@@ -45,6 +45,18 @@ class DataFetcher(object):
         return sorted(t_dates)
         # return sorted([item.replace('-', '') for item in t_dates])
 
+    def get_week_start_end(self, start_date='', end_date='') -> list:
+        df_dates = DataAPI.TradeCalGet(exchangeCD='XSHG', beginDate=start_date, endDate=end_date, isOpen='1',
+                                       pandas='1')
+        weekend_idx = list(df_dates[df_dates.isWeekEnd == 1].index)
+        all_trade_dates = list(df_dates['calendarDate'])
+        ret = []
+        start_idx = 0
+        for idx in weekend_idx:
+            ret.append((all_trade_dates[start_idx], all_trade_dates[idx]))
+            start_idx = idx + 1
+        return ret
+
     def get_instrument_mkt(self, product_ids: list = [], start_date: str = '', end_date: str = ''):
         df = DataAPI.MktFutdGet(endDate=end_date, beginDate=start_date, pandas="1")
         df = df.loc[(df['mainCon'] == 1) | (df['smainCon'] == 1)]  # 筛选出主力和次主力合约
@@ -96,7 +108,7 @@ class DataFetcher(object):
             row = list(_df_instrument.values[0])
             _instrument = row[columns.index('ticker')]
             _exchange = row[columns.index('exchangeCD')]
-            _tick_mkt_path = os.path.join(self.mkt_cache_dir+d[:6], exchange_map.get(_exchange),
+            _tick_mkt_path = os.path.join(self.mkt_cache_dir + d[:6], exchange_map.get(_exchange),
                                           '{0}_{1}.csv'.format(_instrument, d))
             if os.path.exists(_tick_mkt_path):
                 tick_mkt = pd.read_csv(_tick_mkt_path, encoding='gbk')
@@ -115,14 +127,14 @@ class DataFetcher(object):
 
 if __name__ == '__main__':
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
-    data_fetch = DataFetcher(uqer_client)
-    data_fetch.get_instrument_mkt(product_ids=['rb'], start_date='20210704', end_date='20210715')
-    # ret = obj.load_tick_data(start_date='20210704', end_date='20210715', product_ids=['rb'], main_con_flag=1,
-    #                          if_filter=True)
-    data_fetch.get_instrument_contract(product_ids=['rb'])
-    tick_mkt = data_fetch.load_tick_data(start_date='20210704', end_date='20210715', instrument_ids=['rb2110'],
-                                         main_con_flag=1,
-                                         if_filter=True)
-    # print(ret.shape)
-    tick_mkt = tick_mkt.set_index('InstrumentID').join(
-        data_fetch.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
+    data_fetcher = DataFetcher(uqer_client)
+    # data_fetcher.get_instrument_mkt(product_ids=['rb'], start_date='20210704', end_date='20210715')
+    # # ret = obj.load_tick_data(start_date='20210704', end_date='20210715', product_ids=['rb'], main_con_flag=1,
+    # #                          if_filter=True)
+    # data_fetcher.get_instrument_contract(product_ids=['rb'])
+    # tick_mkt = data_fetcher.load_tick_data(start_date='20210704', end_date='20210715', instrument_ids=['rb2110'],
+    #                                        main_con_flag=1,
+    #                                        if_filter=True)
+    # tick_mkt = tick_mkt.set_index('InstrumentID').join(
+    #     data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
+    data_fetcher.get_week_start_end(start_date='2021-03-01', end_date='2021-12-31')

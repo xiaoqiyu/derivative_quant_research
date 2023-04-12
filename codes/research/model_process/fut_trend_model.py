@@ -300,9 +300,9 @@ def train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_da
 def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15',
                                 train_end_date='', infer_start_date=''):
     if model_name == 'rnn':
-        # ts_model = RNNModel(data_fetcher)
-        # ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date,
-        #                      train_end_date=train_end_date, train_base=False)
+        ts_model = RNNModel(data_fetcher)
+        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date,
+                             train_end_date=train_end_date, train_base=False)
         logger.info("start infer from {0} to {1}".format(infer_start_date, end_date))
         stacking_infer(product_id=product_id, start_date=infer_start_date, end_date=end_date)
 

@@ -601,3 +601,4 @@
 [2023-04-11 23:55:02,604] [__main__] [INFO] [start infer from 2021-03-08 to 2021-03-12] [fut_trend_model.py:306]
 [2023-04-11 23:58:09,131] [__main__] [INFO] [start infer from 2021-03-08 to 2021-03-12] [fut_trend_model.py:306]
 [2023-04-12 00:00:34,163] [__main__] [INFO] [start infer from 2021-03-08 to 2021-03-12] [fut_trend_model.py:306]
+[2023-04-12 18:41:43,687] [codes.research.model_process.fut_trend_model] [INFO] [Start train model for product:rb from 2021-03-01 to 2021-03-26] [fut_trend_model.py:111]

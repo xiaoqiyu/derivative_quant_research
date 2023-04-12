@@ -28,8 +28,11 @@ class Logger(object):
         log_format = logging.Formatter(
             '[%(asctime)s] [%(name)s] [%(levelname)s] [%(message)s] [%(filename)s:%(lineno)d]')
 
+
         fh.setFormatter(log_format)
         ch.setFormatter(log_format)
+
+
 
         handlers = handler.split(',')
         if not self.logger.handlers:

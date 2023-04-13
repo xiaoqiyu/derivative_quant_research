@@ -118,6 +118,8 @@ class RNNModel(object):
         if not train_base:  # incremental training when there is already a base model
             epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
                                                                                                   _rnn_model_path)
+        if not train_base:
+            EPOCH = 5
         mult_step_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                                    milestones=[EPOCH // 2, EPOCH // 4 * 3], gamma=0.1)
         train_loss = []
@@ -149,6 +151,8 @@ class RNNModel(object):
                                                                       train_end_date=_train_end_date,
                                                                       test_start_date=_test_start_date,
                                                                       test_end_date=end_date)
+        logger.info('train data loader size:{0},test data loader size:{1}'.format(train_data_loader.dataset.size(), test_data_loader.dataset.size()))
+
         for i in range(EPOCH):
             total_train_loss = []
             rnn.train()  # 进入训练模式
@@ -191,6 +195,7 @@ class RNNModel(object):
                 targets_lst = targets.tolist()
                 y_lst = b_y[:, 0, :].view(b_y.size()[0]).tolist()
                 if len(targets_lst) == len(y_lst):
+
                     test_predicts.extend(targets_lst)
                     test_labels.extend(y_lst)
                     test_epoch.extend([i] * len(y_lst))
@@ -238,15 +243,17 @@ class RNNModel(object):
                                     'data\models\\tsmodels\\{0}_predict_{1}.csv'.format(self.model_name, product_id))
 
         df_predict.to_csv(predict_path, index=False)
-        plt.plot(train_loss, color='r')
-        plt.plot(test_loss, color='b')
-        plt.legend(['train_loss', 'test_loss'])
-        train_loss_track_path = os.path.join(_base_dir,
-                                             'data\models\\tsmodels\\{0}_train_loss_{1}'.format(self.model_name,
-                                                                                                product_id))
-        logger.info(
-            'Complete train for epoch:{0}, save train result figure to :{1}'.format(i, train_loss_track_path))
-        plt.savefig(train_loss_track_path)
+
+        # TODO  not plot for results
+        # plt.plot(train_loss, color='r')
+        # plt.plot(test_loss, color='b')
+        # plt.legend(['train_loss', 'test_loss'])
+        # train_loss_track_path = os.path.join(_base_dir,
+        #                                      'data\models\\tsmodels\\{0}_train_loss_{1}'.format(self.model_name,
+        #                                                                                         product_id))
+        # logger.info(
+        #     'Complete train for epoch:{0}, save train result figure to :{1}'.format(i, train_loss_track_path))
+        # plt.savefig(train_loss_track_path)
 
 
 class LRModel(object):
@@ -284,8 +291,17 @@ def stacking_infer(product_id='rb', x=None, start_date='2021-07-01', end_date='2
         dt_cols = ['{0}_{1}'.format(item[0], item[1].split('.')[0]) for item in dt_cols]
         y = model.predict(data_loader.dataset[:, :, :-1])
 
+    curr_signal_map = {}
     _signal_path = os.path.join(_base_dir, 'data\models\\tsmodels\\signal_{0}.csv'.format(product_id))
-    pd.DataFrame({'datetime': dt_cols, 'signal': y.tolist()}).to_csv(_signal_path, index=False)
+    if os.path.exists(_signal_path):
+        _df_signal = pd.read_csv(_signal_path)
+        curr_signal_map = dict(zip(_df_signal['datetime'], _df_signal['signal']))
+    new_signal_lst = y.tolist()
+    new_signal_map = dict(zip(dt_cols, new_signal_lst))
+    new_signal_map.update(curr_signal_map)
+
+    pd.DataFrame({'datetime': list(new_signal_map.keys()), 'signal': list(new_signal_map.values())}).to_csv(
+        _signal_path, index=False)
     return dict(zip(dt_cols, y.tolist()))
 
 

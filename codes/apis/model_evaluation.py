@@ -46,7 +46,7 @@ def feature_evalution(product_id='rb', start_date='', end_date='', freq='300S'):
 
 def model_evaluation(start_date='2021-03-01', end_date='2021-12-31', infer_weeks=4, product_id='rb', model_name='rnn'):
     # base model training, delete existing model file, it will train from scratch
-    # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-02-26', train_base=True)
+    # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-03-31', train_base=True)
     # incremental training
     week_start_end = data_fetcher.get_week_start_end(start_date=start_date, end_date=end_date)
     week_num = len(week_start_end)
@@ -59,13 +59,12 @@ def model_evaluation(start_date='2021-03-01', end_date='2021-12-31', infer_weeks
         _end_train_week = idx - 1
         train_infer_dates.append((week_start_end[_start_train_week][0], week_start_end[_end_train_week][1],
                                   week_start_end[idx][0], week_start_end[idx][1]))
-    # dates = [('2021-03-01', '2021-03-05', '2021-03-08', '2021-03-12')]
     for start_date, train_end_date, infer_start_date, end_date in train_infer_dates:
         incremental_train_and_infer(model_name=model_name, product_id=product_id, start_date=start_date,
                                     end_date=end_date,
                                     train_end_date=train_end_date, infer_start_date=infer_start_date)
         # FIXME remove hardcode for debug
-        break
+        # break
 
 
 if __name__ == '__main__':

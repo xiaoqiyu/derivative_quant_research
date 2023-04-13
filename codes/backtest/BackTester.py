@@ -118,17 +118,33 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
 
     # 逐tick backtest开始
     values = tick_mkt.values
+    total_tick_num = len(values)
+    ab_cnt = 0
     for idx, item in enumerate(values):
         _last = item[3]
         _update_time = item[2]
         _mul_num = item[-1]
-        curr_factor = factor.update_factor(item, idx=idx, multiplier=item[-1], lag_long=SEQUENCE,
-                                           lag_short=SEC_INTERVAL)
+        # TODO remove hardcode for the threshold
+        if float(ab_cnt / total_tick_num) > 0.25:
+            logger.warn("Error for mkt/tick, ignore the trade date:{0}".format(trade_date))
+            return (total_return, account.fee, 0, account.transaction)
+        try:
+            curr_factor = factor.update_factor(item, idx=idx, multiplier=item[-1], lag_long=SEQUENCE,
+                                               lag_short=SEC_INTERVAL)
+        except Exception as ex:
+            # logger.warn(
+            #     "Ignore current item, Update factor error for item:{0}, last_factor:{1}, and error:{2} ".format(item,
+            #                                                                                                     factor.last_factor,
+            #                                                                                                     ex))
+            ab_cnt += 1
+            continue
+
         close_price = _last
         close_timestamp = _update_time
         # options.update({'factor': curr_factor})
 
         # Get signal
+        _signal = signal(params=options)
         _signal = signal(params=options)
         if _signal.signal_type == LONG_OPEN:
             _fill_price, _fill_lot = get_fill_ret(order=[LONG, _signal.price, _signal.vol], tick=1, mkt=item)
@@ -225,6 +241,7 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
         else:  # NO_SIGNAL
             pass
 
+    logger.info("Factor/tick error num:{0} out of:{1}".format(ab_cnt, total_tick_num))
     _pos = position.get_position(instrument_id)
     total_return_risk = total_return
     total_risk = 0.0

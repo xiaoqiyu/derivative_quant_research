@@ -59,6 +59,7 @@ def model_evaluation(start_date='2021-03-01', end_date='2021-12-31', infer_weeks
         _end_train_week = idx - 1
         train_infer_dates.append((week_start_end[_start_train_week][0], week_start_end[_end_train_week][1],
                                   week_start_end[idx][0], week_start_end[idx][1]))
+    # train_infer_dates = [('2021-04-26', '2021-05-14', '2021-05-17', '2021-05-21')]
     for start_date, train_end_date, infer_start_date, end_date in train_infer_dates:
         incremental_train_and_infer(model_name=model_name, product_id=product_id, start_date=start_date,
                                     end_date=end_date,

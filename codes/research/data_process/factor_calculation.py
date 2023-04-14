@@ -227,7 +227,8 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
         std_train_df[DT_COL_NAME] = train_df[DT_COL_NAME]
         std_train_df[LABEL] = train_df[LABEL]
         del train_df
-        train_data_loader, bins, _ = get_dataloader(df=std_train_df.dropna(), freq=freq,
+        std_train_df = std_train_df.replace(np.inf, np.nan).replace(-np.inf, np.nan).dropna()
+        train_data_loader, bins, _ = get_dataloader(df=std_train_df, freq=freq,
                                                     missing_threshold=missing_threshold,
                                                     dt_col_name=DT_COL_NAME,
                                                     if_filtered=True, if_train=True, bins=None)
@@ -242,8 +243,8 @@ def gen_train_test_features(data_fetcher: DataFetcher = None, param_model=None, 
         std_test_df[DT_COL_NAME] = list(test_df[DT_COL_NAME])
         std_test_df[LABEL] = list(test_df[LABEL])
         del test_df
-
-        test_data_loader, bins, _ = get_dataloader(df=std_test_df.dropna(), freq=freq,
+        std_test_df = std_test_df.replace(np.inf, np.nan).replace(-np.inf, np.nan).dropna()
+        test_data_loader, bins, _ = get_dataloader(df=std_test_df, freq=freq,
                                                    missing_threshold=missing_threshold,
                                                    dt_col_name=DT_COL_NAME,
                                                    if_filtered=True, if_train=False, bins=bins)
@@ -281,8 +282,8 @@ def gen_predict_feature_dataset(data_fetcher: DataFetcher = None, param_model=No
         std_df[DT_COL_NAME] = list(df[DT_COL_NAME])
         std_df[LABEL] = list(df[LABEL])
         del df
-
-        data_loader, bins, dt_col = get_dataloader(df=std_df.dropna(), freq=freq, missing_threshold=missing_threshold,
+        std_df = std_df.replace(np.inf, np.nan).replace(-np.inf, np.nan).dropna()
+        data_loader, bins, dt_col = get_dataloader(df=std_df, freq=freq, missing_threshold=missing_threshold,
                                                    dt_col_name=DT_COL_NAME,
                                                    if_filtered=True, if_train=False, bins=param_model.bins)
     else:

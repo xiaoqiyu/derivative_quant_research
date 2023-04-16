@@ -46,7 +46,7 @@ def feature_evalution(product_id='rb', start_date='', end_date='', freq='300S'):
 
 def model_evaluation(start_date='2021-03-01', end_date='2021-12-31', infer_weeks=4, product_id='rb', model_name='rnn'):
     # base model training, delete existing model file, it will train from scratch
-    # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-03-31', train_base=True)
+    train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-03-31', train_base=True)
     # incremental training
     week_start_end = data_fetcher.get_week_start_end(start_date=start_date, end_date=end_date)
     week_num = len(week_start_end)

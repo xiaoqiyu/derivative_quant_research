@@ -33,8 +33,6 @@ class MinSignal(Signal):
 
     def __call__(self, *args, **kwargs):
         params = kwargs.get('params')  # is options
-
-        # curr_factor = params.get('factor')
         _long, _short, long_price, short_price = 0, 0, 0.0, 0.0
         instrument_id = params.get('instrument_id')
         stop_profit = float(params.get('stop_profit') or 10.0)  # 这是价格

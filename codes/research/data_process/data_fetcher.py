@@ -115,13 +115,11 @@ class DataFetcher(object):
                 ret = pd.concat([ret, tick_mkt])
             else:
                 logger.warn("tick mkt path not exist:{0}".format(_tick_mkt_path))
-        # TODO add filter time logic
-        if if_filter:
-            if filter_start_time and filter_end_time:
-                pass
-            else:
-                pass
         ret.columns = tb_cols
+        if if_filter:
+            ret.index = pd.to_datetime(ret['UpdateTime'])
+        ret = pd.concat(
+            [ret.loc[time(9, 0): time(11, 30)], ret.loc[time(13, 30): time(15, 0)], ret.loc[time(21, 0):time(23, 0)]])
         return ret
 
 

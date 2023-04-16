@@ -309,10 +309,10 @@ def get_dataloader(df, freq: str = '60S', missing_threshold: int = 20, dt_col_na
         raise ValueError("passed features missing datetime col or label column:{0}".format(cols))
     df.index = pd.to_datetime(df['UpdateTime'])
     # df.index = pd.to_datetime(df['time'])
-    # TODO 1. 需要再filter 掉10：15-10：30；2.不按日处理的话，跨日的第一个sample需要去掉？不然就变成前一个交易日的收盘前的行情预测下一个交易日（夜盘）的开盘走势
-    if if_filtered:
-        df = pd.concat(
-            [df.loc[time(9, 30): time(11, 30)], df.loc[time(13, 30): time(15, 0)], df.loc[time(21, 0):time(23, 0)]])
+    # # TODO 1. 需要再filter 掉10：15-10：30；2.不按日处理的话，跨日的第一个sample需要去掉？不然就变成前一个交易日的收盘前的行情预测下一个交易日（夜盘）的开盘走势
+    # if if_filtered:
+    #     df = pd.concat(
+    #         [df.loc[time(9, 30): time(11, 30)], df.loc[time(13, 30): time(15, 0)], df.loc[time(21, 0):time(23, 0)]])
 
     df_label = df[[LABEL]].resample(freq, label='left').sum().replace(0.0, np.nan).dropna()
 

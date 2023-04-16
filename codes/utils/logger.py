@@ -26,7 +26,7 @@ class Logger(object):
         ch.setLevel(log_level)
 
         log_format = logging.Formatter(
-            '[%(asctime)s] [%(name)s] [%(levelname)s] [%(message)s] [%(filename)s:%(lineno)d]')
+            '[%(asctime)s] [%(levelname)s] [%(message)s] [%(name)s:%(lineno)d]')
 
 
         fh.setFormatter(log_format)

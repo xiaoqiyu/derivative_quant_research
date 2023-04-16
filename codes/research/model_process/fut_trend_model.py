@@ -243,12 +243,15 @@ class RNNModel(object):
             _acc0 = round(float(_correct_num0 / pred_0), 2) if pred_0 else 0.0
             _acc1 = round(float(_correct_num1 / pred_1), 2) if pred_1 else 0.0
             _acc2 = round(float(_correct_num2 / pred_2), 2) if pred_2 else 0.0
-            _train_loss = round(float(np.mean(total_train_loss)))
-            _acc = _correct_num / len(curr_test_predicts)
+            _train_loss = round(float(np.mean(total_train_loss)), 4)
+            _acc = round(float(_correct_num / len(curr_test_predicts)), 4)
+            curr_epoch_test_loss = round(float(np.mean(step_test_loss)),4)
+            test_loss.append(curr_epoch_test_loss)
             logger.info(
-                "Epoch:{0},true 0/1/2:({1}/{2}/{3}),pred 0/1/2:({4}/{5}/{6}),acc 0/1/2:({7}/{8}/{9}),train loss:{10}, test loss:{11}, acc:{12}".format(
+                "Epoch:{0},true 0/1/2:({1}/{2}/{3}),pred 0/1/2:({4}/{5}/{6}),acc 0/1/2:({7}/{8}/{9}),train loss:{10}, test loss:{11}, acc:{12},learning rate:{13}".format(
                     i, true_0, true_1, true_2,
-                    pred_0, pred_1, pred_2, _acc0, _acc1, _acc2, _train_loss, curr_epoch_test_loss, _acc))
+                    pred_0, pred_1, pred_2, _acc0, _acc1, _acc2, _train_loss, curr_epoch_test_loss, _acc,
+                    mult_step_scheduler.get_lr()))
             # logger.info(
             #     "Epoch:{0},true:0=>{1},1=>{2},2=>{3};pred:0=>{4},1=>{5},2=>{6}".format(i, true_0, true_1, true_2,
             #                                                                            pred_0, pred_1, pred_2))
@@ -258,17 +261,19 @@ class RNNModel(object):
             #                                                                                          _correct_num0,
             #                                                                                          _correct_num1,
             #                                                                                          _correct_num2))
-            curr_epoch_test_loss = np.mean(step_test_loss)
-            test_loss.append(curr_epoch_test_loss)
+
             # logger.info(
             #     'Epoch:{0}, mean train loss:{1},test loss:{2},acc :{3}, train loss std is:{4}'.format(i, np.mean(
             #         total_train_loss), curr_epoch_test_loss, _correct_num / len(
             #         test_predicts), np.std(total_train_loss)))
             if test_loss and curr_epoch_test_loss < min_test_loss:
-                logger.info("Save model in epoch:{0} with test_loss:{1}".format(i, curr_epoch_test_loss))
+                logger.info("Epoch:{0} Save model with test_loss:{1} and prev test loss:{2}, accu:{3}".format(i,
+                                                                                                              curr_epoch_test_loss,
+                                                                                                              min_test_loss,
+                                                                                                              _acc))
                 min_test_loss = curr_epoch_test_loss
                 self.save_torch_checkpoint(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
-            logger.info('Epoch: {0}, Current learning rate: {1}'.format(i, mult_step_scheduler.get_lr()))
+            # logger.info('Epoch: {0}, Current learning rate: {1}'.format(i, mult_step_scheduler.get_lr()))
             mult_step_scheduler.step()  # 学习率更新
         df_predict = pd.DataFrame({'y_true': test_labels, 'y_predict': test_predicts, 'epoch': test_epoch})
         predict_path = os.path.join(_base_dir,

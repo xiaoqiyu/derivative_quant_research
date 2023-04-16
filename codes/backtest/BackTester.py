@@ -85,22 +85,21 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     tick_mkt = tick_mkt.set_index('InstrumentID').join(
         data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
 
-    # TODO filter 交易时间
 
     # init factor, position account signal
     factor = Factor(product_id=product_id, instrument_id=instrument_id, trade_date=trade_date)
     position = Position()
     account = Account()
-    signal = MinSignal(factor=factor, position=position, instrument_id=instrument_id,
-                       trade_date=trade_date, product_id=product_id)
+    signal = MinSignal(factor=factor, position=position, instrument_id=instrument_id, trade_date=trade_date,
+                       product_id=product_id)
 
     # Init backtest params
     open_fee = float(options.get('open_fee') or 3.0)
     close_fee = float(options.get('close_fee') or 2.0)
     fee = open_fee + close_fee
-    start_timestamp = options.get('start_timestamp') or '09:05:00'
-    start_datetime = '{0} {1}'.format(trade_date, start_timestamp)
-    end_timestamp = options.get('end_timestamp') or '22:50:00'
+    # start_timestamp = options.get('start_timestamp') or '09:05:00'
+    # start_datetime = '{0} {1}'.format(trade_date, start_timestamp)
+    # end_timestamp = options.get('end_timestamp') or '22:50:00'
     # end_datetime = '{0} {1}'.format(trade_date, end_timestamp)
     # delay_sec = int(options.get('delay_sec')) or 5
     total_return = 0.0
@@ -120,6 +119,7 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     values = tick_mkt.values
     total_tick_num = len(values)
     ab_cnt = 0
+    close_timestamp = None
     for idx, item in enumerate(values):
         _last = item[3]
         _update_time = item[2]
@@ -144,7 +144,6 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
         # options.update({'factor': curr_factor})
 
         # Get signal
-        _signal = signal(params=options)
         _signal = signal(params=options)
         if _signal.signal_type == LONG_OPEN:
             _fill_price, _fill_lot = get_fill_ret(order=[LONG, _signal.price, _signal.vol], tick=1, mkt=item)

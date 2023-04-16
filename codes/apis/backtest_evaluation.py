@@ -32,4 +32,4 @@ def backtest_report(start_date='2021-05-14', end_date='2021-05-14', product_id='
 
 
 if __name__ == '__main__':
-    pprint.pprint(backtest_report(start_date='2021-03-22', end_date='2021-12-31', product_id='rb'))
+    pprint.pprint(backtest_report(start_date='2021-12-01', end_date='2021-12-03', product_id='rb'))

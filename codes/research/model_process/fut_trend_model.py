@@ -94,6 +94,23 @@ class RNNModel(object):
             test_loss = checkpoint['test_loss']
         return epoch, model, optimizer, train_loss, test_loss
 
+    def save_model(self, epoch=None, model=None, optimizer=None, train_loss=None, test_loss=None, path=''):
+        if path.endswith('tar'):
+            self.save_torch_checkpoint(epoch, model, optimizer, train_loss, test_loss, path)
+        elif path.endswith('pt'):
+            # model_scripted = torch.jit.script(model)  # Export to TorchScript
+            # model_scripted.save(path)  # Save
+            torch.save(model, path)
+
+    def load_model(self, model=None, optimizer=None, path=None):
+        if path.endswith('tar'):
+            return self.load_torch_checkpoint(model, optimizer, path)
+        elif path.endswith('pt'):
+            # path: xx.pt
+            # model = torch.jit.load(path)
+            # model.eval()
+            return torch.load(path)
+
     def get_train_test_dates(self, start_date: str = '', end_date: str = ''):
         all_trade_dates = self.data_fetcher.get_all_trade_dates(start_date, end_date)
         _len = len(all_trade_dates)
@@ -114,6 +131,8 @@ class RNNModel(object):
         loss_func = nn.CrossEntropyLoss()  # 分类问题
         _rnn_model_path = os.path.join(_base_dir,
                                        'data\models\\tsmodels\\{0}_{1}.tar'.format(self.model_name, product_id))
+        _rnn_model_path_pt = os.path.join(_base_dir,
+                                          'data\models\\tsmodels\\{0}_{1}.pt'.format(self.model_name, product_id))
         # in one epoch not load checkpoint
         if not train_base:  # incremental training when there is already a base model
             epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
@@ -245,7 +264,7 @@ class RNNModel(object):
             _acc2 = round(float(_correct_num2 / pred_2), 2) if pred_2 else 0.0
             _train_loss = round(float(np.mean(total_train_loss)), 4)
             _acc = round(float(_correct_num / len(curr_test_predicts)), 4)
-            curr_epoch_test_loss = round(float(np.mean(step_test_loss)),4)
+            curr_epoch_test_loss = round(float(np.mean(step_test_loss)), 4)
             test_loss.append(curr_epoch_test_loss)
             logger.info(
                 "Epoch:{0},true 0/1/2:({1}/{2}/{3}),pred 0/1/2:({4}/{5}/{6}),acc 0/1/2:({7}/{8}/{9}),train loss:{10}, test loss:{11}, acc:{12},learning rate:{13}".format(
@@ -272,7 +291,11 @@ class RNNModel(object):
                                                                                                               min_test_loss,
                                                                                                               _acc))
                 min_test_loss = curr_epoch_test_loss
-                self.save_torch_checkpoint(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
+                # self.save_torch_checkpoint(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
+                self.save_model(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
+            # FIXME for testing
+            self.save_model(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path_pt)
+
             # logger.info('Epoch: {0}, Current learning rate: {1}'.format(i, mult_step_scheduler.get_lr()))
             mult_step_scheduler.step()  # 学习率更新
         df_predict = pd.DataFrame({'y_true': test_labels, 'y_predict': test_predicts, 'epoch': test_epoch})
@@ -300,6 +323,15 @@ class LRModel(object):
 
     def train_model(self):
         pass
+
+
+def torch_infer(product_id='rb', x=None):
+    _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\rnn_{0}.pt'.format(product_id))
+    model = torch.load(_rnn_model_path).to(device)
+    if x is not None:
+        x = x.to(device)
+        y = model.predict(x)
+    return y
 
 
 # currently  only has RNN model
@@ -368,3 +400,13 @@ if __name__ == '__main__':
     for start_date, train_end_date, infer_start_date, end_date in dates:
         incremental_train_and_infer(model_name='rnn', product_id='rb', start_date=start_date, end_date=end_date,
                                     train_end_date=train_end_date, infer_start_date=infer_start_date)
+
+    # model = RNN().to(device)
+    # torch.save(model, 'test.pt')
+    # m = torch.load('test.pt')
+    # print(m)
+
+    # x = torch.from_numpy(np.random.randn(3 * 120 * 15).reshape(3, 120, 15)).to(torch.float32)
+    # y = torch_infer('rb', x)
+    # print(y.shape)
+    # print(y)

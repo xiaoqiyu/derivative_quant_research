@@ -126,27 +126,65 @@ import numpy as np
 # # print(unpack)
 
 
+# examples for pack_padded_sequence
+# import torch
+# import torch.nn as nn
+# from torch.autograd import Variable
+# from torch.nn import utils as nn_utils
+#
+# batch_size = 2
+# max_lenght = 2
+# hidden_size = 2
+# n_layers = 1
+# tensor_in = torch.FloatTensor([[1, 2, 3], [1, 0, 0]]).resize_(2, 3, 1)
+# tensor_in = Variable(tensor_in)
+# seq_lengths = [3, 1]
+#
+# pack = nn_utils.rnn.pack_padded_sequence(tensor_in, seq_lengths, batch_first=True)
+# print('packed', pack)
+#
+# rnn = nn.RNN(1, hidden_size, n_layers, batch_first=True)
+# h0 = Variable(torch.randn(n_layers, batch_size, hidden_size))
+#
+# out, _ = rnn(pack, h0)
+# print('out', out)
+#
+# unpacked = nn_utils.rnn.pad_packed_sequence(out)
+# print('unpacked', unpacked)
+
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
-from torch.nn import utils as nn_utils
+import torchvision
 
-batch_size = 2
-max_lenght = 2
-hidden_size = 2
-n_layers = 1
-tensor_in = torch.FloatTensor([[1, 2, 3], [1, 0, 0]]).resize_(2, 3, 1)
-tensor_in = Variable(tensor_in)
-seq_lengths = [3, 1]
+# An instance of your model.
+model = torchvision.models.resnet18()
 
-pack = nn_utils.rnn.pack_padded_sequence(tensor_in, seq_lengths, batch_first=True)
-print('packed', pack)
+# An example input you would normally provide to your model's forward() method.
+example = torch.rand(1, 3, 224, 224)
 
-rnn = nn.RNN(1, hidden_size, n_layers, batch_first=True)
-h0 = Variable(torch.randn(n_layers, batch_size, hidden_size))
+# Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
+traced_script_module = torch.jit.trace(model, example)
+output = traced_script_module(torch.rand(1, 3, 224, 224))
+traced_script_module.save("traced_resnet_model.pt")
 
-out, _ = rnn(pack, h0)
-print('out', out)
+print(output)
 
-unpacked = nn_utils.rnn.pad_packed_sequence(out)
-print('unpacked', unpacked)
+
+
+# class MyModule(torch.nn.Module):
+#     def __init__(self, N, M):
+#         super(MyModule, self).__init__()
+#         self.weight = torch.nn.Parameter(torch.rand(N, M))
+#
+#     def forward(self, input):
+#         if input.sum() > 0:
+#           output = self.weight.mv(input)
+#         else:
+#           output = self.weight + input
+#         return output
+#
+# my_module = MyModule(10,20)
+# sm = torch.jit.script(my_module)
+
+
+
+

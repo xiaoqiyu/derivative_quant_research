@@ -3314,3 +3314,5 @@
 [2023-05-12 15:50:51,524] [INFO] [loading from existing model with train loss:[0.37412342098024154, 0.36865601274702287, 0.3675958613554637, 0.36140938599904376, 0.35866759883032906] and test_loss:0.3433] [__main__:140]
 [2023-05-12 15:50:52,853] [INFO] [Get dataloader for train:2021-03-01-2021-03-05, test:2021-03-08-2021-03-12] [__main__:168]
 [2023-05-12 15:51:44,373] [INFO] [train data loader size:torch.Size([983, 120, 16]),test data loader size:torch.Size([1780, 120, 16])] [__main__:180]
+[2023-05-13 01:08:00,815] [INFO] [Start train model for product:rb from 2021-03-01 to 2021-03-12] [__main__:128]
+[2023-05-13 01:08:05,100] [INFO] [loading from existing model with train loss:[0.37412342098024154, 0.36865601274702287, 0.3675958613554637, 0.36140938599904376, 0.35866759883032906] and test_loss:0.3433] [__main__:140]

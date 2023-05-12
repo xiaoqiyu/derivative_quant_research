@@ -2093,3 +2093,4 @@
 [2023-05-12 15:51:43,369] [INFO] ['get_dataloader'  0.50 sec] [codes.utils.helper:447]
 [2023-05-12 15:51:44,359] [INFO] ['get_dataloader'  0.81 sec] [codes.utils.helper:447]
 [2023-05-12 15:51:44,373] [INFO] ['gen_train_test_features'  51.52 sec] [codes.utils.helper:447]
+[2023-05-13 01:08:05,100] [INFO] ['load_torch_checkpoint'  0.41 sec] [codes.utils.helper:447]

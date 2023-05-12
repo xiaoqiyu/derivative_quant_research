@@ -61,6 +61,8 @@ class ParamModel(object):
                 return pickle.load(fin)
 
 
+
+
 class RNNModel(object):
     def __init__(self, data_fetcher: DataFetcher = None):
         self.data_fetcher = data_fetcher
@@ -401,12 +403,8 @@ if __name__ == '__main__':
         incremental_train_and_infer(model_name='rnn', product_id='rb', start_date=start_date, end_date=end_date,
                                     train_end_date=train_end_date, infer_start_date=infer_start_date)
 
-    # model = RNN().to(device)
-    # torch.save(model, 'test.pt')
-    # m = torch.load('test.pt')
-    # print(m)
-
     # x = torch.from_numpy(np.random.randn(3 * 120 * 15).reshape(3, 120, 15)).to(torch.float32)
     # y = torch_infer('rb', x)
     # print(y.shape)
     # print(y)
+

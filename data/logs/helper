@@ -2088,3 +2088,8 @@
 [2023-05-06 14:20:32,465] [INFO] ['calculate_raw_features'  24.63 sec] [codes.utils.helper:447]
 [2023-05-06 14:20:33,545] [INFO] ['get_dataloader'  0.81 sec] [codes.utils.helper:447]
 [2023-05-06 14:20:33,551] [INFO] ['gen_predict_feature_dataset'  25.72 sec] [codes.utils.helper:447]
+[2023-05-12 15:50:51,502] [INFO] ['load_torch_checkpoint'  0.40 sec] [codes.utils.helper:447]
+[2023-05-12 15:51:42,438] [INFO] ['calculate_raw_features'  49.58 sec] [codes.utils.helper:447]
+[2023-05-12 15:51:43,369] [INFO] ['get_dataloader'  0.50 sec] [codes.utils.helper:447]
+[2023-05-12 15:51:44,359] [INFO] ['get_dataloader'  0.81 sec] [codes.utils.helper:447]
+[2023-05-12 15:51:44,373] [INFO] ['gen_train_test_features'  51.52 sec] [codes.utils.helper:447]

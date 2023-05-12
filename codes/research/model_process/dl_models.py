@@ -80,3 +80,11 @@ class RNN(nn.Module):
 
 class LrModel(nn.Module):
     pass
+
+if __name__ == "__main__":
+    my_model = RNN()
+    inputs = torch.rand(2,120,15)
+    print(my_model)
+
+    outputs = my_model(inputs)
+    print(outputs.size())

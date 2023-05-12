@@ -22,7 +22,7 @@ margin_overwrite = {'p': 11}
 open_fee_overwrite = {'p': 2.5, 'rb': 5.08, 'm': 2.5}
 close_fee_overwrite = {'p': 2.5, 'rb': 5.08, 'm': 2.5}  # rb is close today
 
-uqer_client = uqer.Client(token="6aa0df8d4eec296e0c25fac407b332449112aad6c717b1ada315560e9aa0a311")
+uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
 
 
 def select_product(product_lst: list = ['rb', 'm'], start_date: str = '', end_date: str = '',
@@ -538,9 +538,9 @@ if __name__ == '__main__':
     print(sys.argv)
     # options = utils.get_config_option()
     # print(options.get('uqer_token'))
-    start_date = '2022-04-26'
-    end_date = '2022-06-06'
-    uqer_client = uqer.Client(token="6aa0df8d4eec296e0c25fac407b332449112aad6c717b1ada315560e9aa0a311")
+    start_date = '2023-04-03'
+    end_date = '2023-05-11'
+    uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     # # backtest(start_date=start_date, end_date=end_date, save_factor=False)
     # get_eod_signal(start_date=start_date, end_date=end_date, topN=10)
     df = get_daily_cache(start_date=start_date, end_date=end_date, product_id=['rb', 'p', 'eg', 'ag'], lag_window=5)

@@ -61,8 +61,6 @@ class ParamModel(object):
                 return pickle.load(fin)
 
 
-
-
 class RNNModel(object):
     def __init__(self, data_fetcher: DataFetcher = None):
         self.data_fetcher = data_fetcher
@@ -102,7 +100,7 @@ class RNNModel(object):
         elif path.endswith('pt'):
             # model_scripted = torch.jit.script(model)  # Export to TorchScript
             # model_scripted.save(path)  # Save
-            torch.save(model, path)
+            model.save(path)
 
     def load_model(self, model=None, optimizer=None, path=None):
         if path.endswith('tar'):
@@ -295,8 +293,7 @@ class RNNModel(object):
                 min_test_loss = curr_epoch_test_loss
                 # self.save_torch_checkpoint(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
                 self.save_model(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
-            # FIXME for testing
-            self.save_model(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path_pt)
+                self.save_model(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path_pt)
 
             # logger.info('Epoch: {0}, Current learning rate: {1}'.format(i, mult_step_scheduler.get_lr()))
             mult_step_scheduler.step()  # 学习率更新
@@ -396,7 +393,7 @@ def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2
 
 if __name__ == '__main__':
     # train base, delete existing model file, it will train from scratch
-    # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-02-26', train_base=True)
+    # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-01-15', train_base=True)
 
     dates = [('2021-03-01', '2021-03-05', '2021-03-08', '2021-03-12')]
     for start_date, train_end_date, infer_start_date, end_date in dates:
@@ -408,3 +405,7 @@ if __name__ == '__main__':
     # print(y.shape)
     # print(y)
 
+    # _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
+    # param_model = ParamModel(_param_model_path)
+    # param_model = param_model.load_model()
+    # print(param_model.bins)

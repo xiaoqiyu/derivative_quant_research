@@ -17,7 +17,8 @@ sys.path.append(_base_dir)
 from codes.utils.define import *
 
 
-class MLP(nn.Module):
+# class MLP(nn.Module):
+class MLP(torch.jit.ScriptModule):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(MLP, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
@@ -36,7 +37,8 @@ class MLP(nn.Module):
 
 
 # 定义LSTM的结构
-class RNN(nn.Module):
+# class RNN(nn.Module):
+class RNN(torch.jit.ScriptModule):
     def __init__(self):
         super(RNN, self).__init__()
         self.fc = nn.Linear(in_features=INPUT_SIZE, out_features=RNN_INPUT_SIZE, bias=True)
@@ -62,6 +64,7 @@ class RNN(nn.Module):
         self.h_s = None
         self.h_c = None
 
+    @torch.jit.script_method
     def forward(self, x):  # x是输入数据集
         l_out = self.fc(x)
         # for nn.RNN, _ is h_c, for lstm, _ is (h_s,h_c)
@@ -69,10 +72,12 @@ class RNN(nn.Module):
         #  h_s和h_c表示每一个隐层的上一时间点输出值和输入细胞状态
         # h_s和h_c的格式均是(num_layers * num_directions, batch, HIDDEN_SIZE)
         # 如果是双向LSTM，num_directions是2，单向是1
-        r_out = nn.Flatten()(r_out)
+        # r_out = nn.Flatten()(r_out)
+        r_out = r_out.flatten(start_dim=1, end_dim=-1)
         y = self.mlp(r_out)
         return y
 
+    @torch.jit.script_method
     def predict(self, x):
         _distribution = F.softmax(self.forward(x))
         return torch.argmax(_distribution, dim=1)
@@ -81,10 +86,23 @@ class RNN(nn.Module):
 class LrModel(nn.Module):
     pass
 
+
 if __name__ == "__main__":
     my_model = RNN()
-    inputs = torch.rand(2,120,15)
+    inputs = torch.rand(2, 120, 15)
     print(my_model)
 
-    outputs = my_model(inputs)
-    print(outputs.size())
+    # outputs = my_model(inputs)
+    # print(outputs.size())
+
+    outputs = my_model.predict(inputs)
+    print(outputs)
+    my_model.save("rnn.pt")
+    rnn = torch.load('rnn.pt')
+    inputs = torch.rand(2, 120, 15)
+    print(my_model)
+
+
+    outputs = my_model.predict(inputs)
+    print(outputs)
+

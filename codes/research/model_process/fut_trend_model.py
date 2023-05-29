@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import pickle
+import configparser
 
 _base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../../..")))
 sys.path.append(_base_dir)
@@ -391,21 +392,43 @@ def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2
         stacking_infer(product_id=product_id, start_date=infer_start_date, end_date=end_date)
 
 
+def save_param_model(product_id='rb'):
+    _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
+    param_model = ParamModel(_param_model_path)
+    param_model = param_model.load_model()
+    print(param_model.bins)
+    # config = configparser.ConfigParser()
+    # config[product_id]['bins'] = param_model.bins
+    out_param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels_{}.txt'.format(product_id))
+    # with open(out_param_model_path, 'w') as configfile:
+    #     config.write(configfile)
+    bins_str = ''
+    for item in param_model.bins:
+        bins_str = '{},{}'.format(bins_str, round(item, 4))
+    mean_str = ''
+    for item in param_model.std_model.mean_:
+        mean_str = '{},{}'.format(mean_str, round(item, 4))
+
+    var_str = ''
+    for item in param_model.std_model.var_:
+        var_str = '{},{}'.format(var_str, round(item, 4))
+    with open(out_param_model_path, 'w') as out_file:
+        out_file.writelines('{}\n'.format(bins_str.strip(',')))
+        out_file.writelines('{}\n'.format(mean_str.strip(',')))
+        out_file.writelines('{}\n'.format(var_str.strip(',')))
+
+
 if __name__ == '__main__':
     # train base, delete existing model file, it will train from scratch
     # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-01-15', train_base=True)
+    #
+    # dates = [('2021-03-01', '2021-03-05', '2021-03-08', '2021-03-12')]
+    # for start_date, train_end_date, infer_start_date, end_date in dates:
+    #     incremental_train_and_infer(model_name='rnn', product_id='rb', start_date=start_date, end_date=end_date,
+    #                                 train_end_date=train_end_date, infer_start_date=infer_start_date)
 
-    dates = [('2021-03-01', '2021-03-05', '2021-03-08', '2021-03-12')]
-    for start_date, train_end_date, infer_start_date, end_date in dates:
-        incremental_train_and_infer(model_name='rnn', product_id='rb', start_date=start_date, end_date=end_date,
-                                    train_end_date=train_end_date, infer_start_date=infer_start_date)
-
-    # x = torch.from_numpy(np.random.randn(3 * 120 * 15).reshape(3, 120, 15)).to(torch.float32)
-    # y = torch_infer('rb', x)
-    # print(y.shape)
-    # print(y)
-
-    # _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
-    # param_model = ParamModel(_param_model_path)
-    # param_model = param_model.load_model()
-    # print(param_model.bins)
+    x = torch.from_numpy(np.random.randn(3 * 120 * 6).reshape(3, 120, 6)).to(torch.float32)
+    y = torch_infer('rb', x)
+    print(y.shape)
+    print(y)
+    # save_param_model()

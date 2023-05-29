@@ -21,16 +21,33 @@ TICK_SIZE = 41400
 TICK = 1
 
 # OpenVolume/CloseVolume has too many missing value, for rb in 202107,about 5% missing value
-TEST_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'LastPrice', 'OpenInterest',
-                 'InterestDiff', 'Turnover', 'Volume', 'wap', 'log_return',
-                 'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'wap_log_return', ]
-RENAME_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'LastPrice',
-                   'OpenInterest', 'InterestDiff', 'Turnover', 'Volume', 'wap', 'log_return',
-                   'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'label']
+# TEST_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'LastPrice', 'OpenInterest',
+#                  'InterestDiff', 'Turnover', 'Volume', 'wap', 'log_return',
+#                  'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'wap_log_return', ]
+# RENAME_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'LastPrice',
+#                    'OpenInterest', 'InterestDiff', 'Turnover', 'Volume', 'wap', 'log_return',
+#                    'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'label']
+
+TEST_FEATURES = ['UpdateTime',  # factor 1:UpdateTime
+                 'price_spread',  # factor 7；_curr_spread
+                 'LastPrice',  # factor 4:_curr_last
+                 'InterestDiff',  # factor 18,_curr_interest
+                 'Volume',  # factor 17:_curr_vol
+                 'wap',  # factor 8, _curr_mid
+                 'log_return',  # factor 10, _log_return
+                 'wap_log_return']
+RENAME_FEATURES = ['UpdateTime',  # factor 1:UpdateTime
+                   'price_spread',  # factor 7；_curr_spread
+                   'LastPrice',  # factor 4:_curr_last
+                   'InterestDiff',  # factor 18,_curr_interest
+                   'Volume',  # factor 17:_curr_vol
+                   'wap',  # factor 8, _curr_mid
+                   'log_return',  # factor 10, _log_return
+                   'label']
 
 # model constants
 # 定义模型训练相关的常量
-INPUT_SIZE = len(TEST_FEATURES) - 2 # 定义输入的特征数
+INPUT_SIZE = len(TEST_FEATURES) - 2  # 定义输入的特征数
 RNN_INPUT_SIZE = 128
 HIDDEN_SIZE = 128  # 定义一个LSTM单元有多少个神经元
 BATCH_SIZE = 512  # batch
@@ -110,7 +127,7 @@ STRATEGY_CONF_NAME = 'strategy.ini'
 TICK_MODEL_DIR = 'tickmodels'
 DAILY_MODEL_DIR = 'daily_models'
 # TICK_MKT_DIR = 'C:\projects\l2mkt\FutAC_TickKZ_PanKou_Daily_'
-TICK_MKT_DIR = 'G:\\future\FutAC_TickKZ_PanKou_Daily_'
+TICK_MKT_DIR = 'D:\\future\FutAC_TickKZ_PanKou_Daily_'
 FACTOR_DIR = 'features'
 CACHE_DIR = 'data'
 BT_DIR = 't0backtest'

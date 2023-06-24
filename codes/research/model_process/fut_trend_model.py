@@ -391,6 +391,8 @@ def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2
         stacking_infer(product_id=product_id, start_date=infer_start_date, end_date=end_date)
 
 
+
+
 if __name__ == '__main__':
     # train base, delete existing model file, it will train from scratch
     # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-01-15', train_base=True)

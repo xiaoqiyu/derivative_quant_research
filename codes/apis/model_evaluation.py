@@ -18,7 +18,8 @@ from codes.utils.define import *
 from codes.utils.logger import Logger
 from codes.research.model_process.fut_trend_model import train_all
 from codes.research.model_process.fut_trend_model import incremental_train_and_infer
-from codes.research.model_process.fut_trend_model import stacking_infer
+from codes.research.model_process.fut_trend_model import test_model
+from codes.research.model_process.fut_trend_model import RNNModel
 from codes.research.data_process.data_fetcher import DataFetcher
 
 _log_path = os.path.join(_base_dir, 'data\logs\{0}'.format(os.path.split(__file__)[-1].strip('.py')))
@@ -44,7 +45,8 @@ def feature_evalution(product_id='rb', start_date='', end_date='', freq='300S'):
     ).dropna().droplevel(level=0, axis=1)
 
 
-def model_evaluation(start_date='2021-03-01', end_date='2021-12-31', infer_weeks=4, product_id='rb', model_name='rnn'):
+def model_evaluation_v0(start_date='2021-03-01', end_date='2021-12-31', infer_weeks=4, product_id='rb',
+                        model_name='rnn'):
     # base model training, delete existing model file, it will train from scratch
     train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-03-31', train_base=True)
     # incremental training
@@ -64,8 +66,42 @@ def model_evaluation(start_date='2021-03-01', end_date='2021-12-31', infer_weeks
         incremental_train_and_infer(model_name=model_name, product_id=product_id, start_date=start_date,
                                     end_date=end_date,
                                     train_end_date=train_end_date, infer_start_date=infer_start_date)
-        # FIXME remove hardcode for debug
-        # break
+
+
+def model_evaluation(start_date='2021-01-04', end_date='2021-12-31', infer_weeks=12, product_id='rb',
+                     model_name='rnn'):
+    # incremental training
+    week_start_end = data_fetcher.get_week_start_end(start_date=start_date, end_date=end_date)
+    week_num = len(week_start_end)
+    if week_num < infer_weeks:
+        logger.warn("evaluation period is too short, less than target infer weeks:{0}".format(infer_weeks))
+        return
+    train_infer_dates = []
+    train_weeks = []
+    for idx in range(infer_weeks - 1, week_num):
+        _start_train_week = idx + 1 - infer_weeks
+        _end_train_week = idx - 2
+        train_infer_dates.append((week_start_end[_start_train_week][0], week_start_end[_end_train_week][1],
+                                  week_start_end[idx][0], week_start_end[idx][1]))
+        train_weeks.append((week_start_end[_start_train_week][0], week_start_end[_end_train_week][1],
+                            # start_date, train_end_date
+                            week_start_end[idx - 1][0], week_start_end[idx - 1][1],  # val_start_date, val_end_date
+                            week_start_end[idx][0], week_start_end[idx][1]))  # test_start_date, test_end_date
+    train_infer_dates = [('2021-01-04', '2021-03-26', '2021-03-29', '2021-04-02')]
+
+    for start_date, train_end_date, val_start_date, val_end_date, test_start_date, test_end_date in train_weeks:
+        if model_name == 'rnn':
+            ts_model = RNNModel(data_fetcher)
+            ts_model.train_model(product_id=product_id, start_date=start_date, end_date=val_end_date,
+                                 train_end_date=train_end_date)
+            logger.info("start test from {0} to {1}".format(test_start_date, end_date))
+            # FIXME change to test dates, add test evaluation
+            test_model(product_id=product_id, start_date=test_start_date, end_date=test_end_date)
+
+    # for start_date, train_end_date, infer_start_date, end_date in train_infer_dates:
+    #     incremental_train_and_infer(model_name=model_name, product_id=product_id, start_date=start_date,
+    #                                 end_date=end_date,
+    #                                 train_end_date=train_end_date, infer_start_date=infer_start_date)
 
 
 if __name__ == '__main__':

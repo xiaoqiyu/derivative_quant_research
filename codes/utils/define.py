@@ -29,7 +29,7 @@ TICK = 1
 #                    'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'label']
 
 TEST_FEATURES = ['UpdateTime',  # factor 1:UpdateTime
-                 'price_spread',  # factor 7；_curr_spread
+                 'buy_sell_spread',  # factor 7；_curr_spread
                  'LastPrice',  # factor 4:_curr_last
                  'InterestDiff',  # factor 18,_curr_interest
                  'Volume',  # factor 17:_curr_vol
@@ -37,7 +37,7 @@ TEST_FEATURES = ['UpdateTime',  # factor 1:UpdateTime
                  'log_return',  # factor 10, _log_return
                  'wap_log_return']
 RENAME_FEATURES = ['UpdateTime',  # factor 1:UpdateTime
-                   'price_spread',  # factor 7；_curr_spread
+                   'buy_sell_spread',  # factor 7；_curr_spread
                    'LastPrice',  # factor 4:_curr_last
                    'InterestDiff',  # factor 18,_curr_interest
                    'Volume',  # factor 17:_curr_vol

@@ -174,8 +174,9 @@ def calculate_raw_features(data_fetcher: DataFetcher = None, product_id: str = '
     # dif, dea, macd = ta.MACD(tick_mkt['LastPrice'], fastperiod=12, slowperiod=26, signalperiod=9)
 
     tick_mkt['open_close_ratio'] = open_close_ratio
-    tick_mkt['price_spread'] = (tick_mkt['BidPrice1'] - tick_mkt['AskPrice1']) / (
-            tick_mkt['BidPrice1'] + tick_mkt['AskPrice1'] / 2)
+    tick_mkt['price_spread'] = (tick_mkt['BidPrice1'] - tick_mkt['AskPrice1']) / ((
+                                                                                          tick_mkt['BidPrice1'] +
+                                                                                          tick_mkt['AskPrice1']) / 2)
     tick_mkt['buy_sell_spread'] = abs(tick_mkt['BidPrice1'] - tick_mkt['AskPrice1'])
     tick_mkt['oi'] = lst_oi
     tick_mkt['oir'] = lst_oir

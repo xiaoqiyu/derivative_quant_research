@@ -46,19 +46,23 @@ class ParamModel(object):
 
     def update_model(self, std_model=None, bins=None):
         if std_model is not None:
+            logger.info("update param model with var:{0}, means_{1}".format(std_model.var_, std_model.mean_))
             self.std_model = std_model
         if bins is not None:
+            logger.info("update param model with bins:{0}".format(bins))
             self.bins = bins
 
     def dump_model(self, model_path=''):
         if model_path:
             self._path = model_path
+        logger.info("saving param model to path:{0}".format(self._path))
         with open(self._path, 'wb') as fout:
             pickle.dump(self, fout)
 
     def load_model(self, model_path=''):
         if model_path:
             self._path = model_path
+        logger.info("loading param model from path:{0}".format(self._path))
         if os.path.exists(self._path):
             with open(self._path, 'rb') as fin:
                 _obj = pickle.load(fin)
@@ -145,7 +149,7 @@ class RNNModel(object):
         learning_rate_gamma = 0.1
         if os.path.exists(_rnn_model_path):
             epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
-                                                                                          _rnn_model_path)
+                                                                                                  _rnn_model_path)
             optimizer.param_groups[0]['lr'] = 0.00001
             learning_rate_gamma = 1
             logger.info("loading from existing model with train loss:{0} and test_loss:{1}".format(cache_train_loss,
@@ -167,9 +171,10 @@ class RNNModel(object):
         val_loss = []
         # min_test_loss = cache_test_loss
         # min_test_loss = np.inf if train_base else cache_test_loss
-        _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
+        _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels_{0}.pkl'.format(product_id))
         param_model = ParamModel(_param_model_path)
-        param_model.load_model()
+        # TODO not load model here, for training, it will call fit_transform
+        # param_model.load_model()
 
         val_predicts = []
         val_labels = []
@@ -323,7 +328,7 @@ def test_model(product_id='rb', x=None, start_date='2021-07-01', end_date='2021-
     _rnn_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\rnn_{0}.tar'.format(product_id))
     epoch, model, optimizer, train_loss, test_loss = rnn_model.load_torch_checkpoint(path=_rnn_model_path)
 
-    _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels.pkl')
+    _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels_{0}.pkl'.format(product_id))
     param_model = ParamModel(_param_model_path)
     param_model.load_model()
     model.to(device)

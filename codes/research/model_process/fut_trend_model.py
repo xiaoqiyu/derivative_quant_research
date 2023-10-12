@@ -436,15 +436,15 @@ def save_param_model(product_id='rb'):
 
 if __name__ == '__main__':
     # train base, delete existing model file, it will train from scratch
-    # train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-01-15', train_base=True)
-    #
-    # dates = [('2021-03-01', '2021-03-05', '2021-03-08', '2021-03-12')]
-    # for start_date, train_end_date, infer_start_date, end_date in dates:
-    #     incremental_train_and_infer(model_name='rnn', product_id='rb', start_date=start_date, end_date=end_date,
-    #                                 train_end_date=train_end_date, infer_start_date=infer_start_date)
-    #
-    # x = torch.from_numpy(np.random.randn(3 * 120 * 6).reshape(3, 120, 6)).to(torch.float32)
-    # y = torch_infer('rb', x)
-    # print(y.shape)
-    # print(y)
-    save_param_model()
+    train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-01-15', train_base=True)
+
+    dates = [('2021-03-01', '2021-03-05', '2021-03-08', '2021-03-12')]
+    for start_date, train_end_date, infer_start_date, end_date in dates:
+        incremental_train_and_infer(model_name='rnn', product_id='rb', start_date=start_date, end_date=end_date,
+                                    train_end_date=train_end_date, infer_start_date=infer_start_date)
+
+    x = torch.from_numpy(np.random.randn(3 * 120 * 6).reshape(3, 120, 6)).to(torch.float32)
+    y = torch_infer('rb', x)
+    print(y.shape)
+    print(y)
+    # save_param_model()

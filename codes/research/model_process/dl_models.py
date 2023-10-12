@@ -29,6 +29,7 @@ class MLP(torch.jit.ScriptModule):
         self.init_weights(self.fc2)
 
     def forward(self, X):
+
         return self.fc2(self.relu(self.fc1(X)))
 
     def init_weights(self, layer):
@@ -88,21 +89,28 @@ class LrModel(nn.Module):
 
 
 if __name__ == "__main__":
+    print("cuda device")
+    print(torch.cuda.is_available())
     my_model = RNN()
-    inputs = torch.rand(2, 120, 15)
+    inputs = torch.rand(2, 120, 6).cuda()
     print(my_model)
+
+    model = torch.load("rnn_rb.pt")
+    output = model.predict(inputs)
+    print("output", output)
+    print(inputs.device, output.device)
 
     # outputs = my_model(inputs)
     # print(outputs.size())
 
-    outputs = my_model.predict(inputs)
-    print(outputs)
-    my_model.save("rnn.pt")
-    rnn = torch.load('rnn.pt')
-    inputs = torch.rand(2, 120, 15)
-    print(my_model)
-
-
-    outputs = my_model.predict(inputs)
-    print(outputs)
+    # outputs = my_model.predict(inputs)
+    # print(outputs)
+    # my_model.save("rnn.pt")
+    # rnn = torch.load('rnn.pt')
+    # inputs = torch.rand(2, 120, 6)
+    # print(my_model)
+    #
+    #
+    # outputs = my_model.predict(inputs)
+    # print(outputs)
 

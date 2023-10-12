@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import json
 import hashlib
-import talib as ta
+# import talib as ta
 import re
 from typing import List, Tuple, Union
 from datetime import time
@@ -121,15 +121,15 @@ def list_files(abs_path=None, ref_path=None):
 
 # TODO double check the logic, for the first period/window_len - 1 , there is no values, whether to drop it or filled it
 # fill with the previous series regarding the window_len/period
-def adjusted_sma(inputs=[], period=10, filled=True):
-    ret = list(ta.SMA(np.array(list(inputs), dtype=float), timeperiod=period))
-    if not filled:
-        return ret
-    # fill the na values regarding of windows_len
-    fixed_len = period - 1 if period < len(inputs) else len(inputs)
-    for i in range(fixed_len):
-        ret[i] = sum(inputs[:i + 1]) / (i + 1)
-    return ret
+# def adjusted_sma(inputs=[], period=10, filled=True):
+#     ret = list(ta.SMA(np.array(list(inputs), dtype=float), timeperiod=period))
+#     if not filled:
+#         return ret
+#     # fill the na values regarding of windows_len
+#     fixed_len = period - 1 if period < len(inputs) else len(inputs)
+#     for i in range(fixed_len):
+#         ret[i] = sum(inputs[:i + 1]) / (i + 1)
+#     return ret
 
 
 def get_parent_dir(file=None):

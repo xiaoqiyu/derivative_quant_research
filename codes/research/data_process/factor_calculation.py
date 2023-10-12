@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 import sys
 import numpy as np
 import pandas as pd
-import talib as ta
+# import talib as ta
 import uqer
 from uqer import DataAPI
 from datetime import time
@@ -28,6 +28,7 @@ from codes.utils.helper import timeit
 from codes.utils.define import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 def cal_oir(bid_price: list = [], bid_vol: list = [], ask_price: list = [], ask_vol: list = [],
             n_rows: int = 0) -> tuple:
@@ -169,21 +170,23 @@ def calculate_raw_features(data_fetcher: DataFetcher = None, product_id: str = '
     _lst_turn_idx, _lst_turn_val = cal_turning(_lst_last_price)
     _lst_slope = cal_slope(_lst_last_price, _lst_turn_idx, _lst_turn_val)
     _lst_cos = cal_cos(_lst_last_price, _lst_turn_idx, _lst_turn_val)
-
-    dif, dea, macd = ta.MACD(tick_mkt['LastPrice'], fastperiod=12, slowperiod=26, signalperiod=9)
+    # FIXME ta lib not work for python 3.11,should build the lib
+    # dif, dea, macd = ta.MACD(tick_mkt['LastPrice'], fastperiod=12, slowperiod=26, signalperiod=9)
 
     tick_mkt['open_close_ratio'] = open_close_ratio
-    tick_mkt['price_spread'] = (tick_mkt['BidPrice1'] - tick_mkt['AskPrice1']) / (
-            tick_mkt['BidPrice1'] + tick_mkt['AskPrice1'] / 2)
+    tick_mkt['price_spread'] = (tick_mkt['BidPrice1'] - tick_mkt['AskPrice1']) / ((
+                                                                                          tick_mkt['BidPrice1'] +
+                                                                                          tick_mkt['AskPrice1']) / 2)
     tick_mkt['buy_sell_spread'] = abs(tick_mkt['BidPrice1'] - tick_mkt['AskPrice1'])
     tick_mkt['oi'] = lst_oi
     tick_mkt['oir'] = lst_oir
     tick_mkt['aoi'] = lst_aoi
     tick_mkt['slope'] = _lst_slope
     tick_mkt['cos'] = _lst_cos
-    tick_mkt['macd'] = macd
-    tick_mkt['dif'] = dif
-    tick_mkt['dea'] = dea
+    # FIXME ta lib not work for python 3.11,should build the lib
+    # tick_mkt['macd'] = macd
+    # tick_mkt['dif'] = dif
+    # tick_mkt['dea'] = dea
     tick_mkt['bs_tag'] = tick_mkt['LastPrice'].rolling(2).apply(lambda x: 1 if list(x)[-1] > list(x)[0] else -1)
     tick_mkt['bs_vol'] = tick_mkt['bs_tag'] * tick_mkt['Volume']
     return tick_mkt

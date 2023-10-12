@@ -539,7 +539,7 @@ if __name__ == '__main__':
     # options = utils.get_config_option()
     # print(options.get('uqer_token'))
     start_date = '2023-04-03'
-    end_date = '2023-05-11'
+    end_date = '2023-07-26'
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     # # backtest(start_date=start_date, end_date=end_date, save_factor=False)
     # get_eod_signal(start_date=start_date, end_date=end_date, topN=10)

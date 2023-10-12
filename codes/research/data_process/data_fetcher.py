@@ -6,7 +6,7 @@
 # @File    : data_fetcher.py
 
 import numpy as np
-import talib as ta
+# import talib as ta
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
@@ -62,7 +62,8 @@ class DataFetcher(object):
         df = df.loc[(df['mainCon'] == 1) | (df['smainCon'] == 1)]  # 筛选出主力和次主力合约
         product_ids = [item.upper() for item in product_ids]
         self.instrument_cache = df.loc[(item in product_ids for item in df['contractObject'])]
-        self.instrument_cache['tradeDate'] = [item.replace('-', '') for item in self.instrument_cache['tradeDate']]
+        _format_trade_date = [item.replace('-', '') for item in self.instrument_cache['tradeDate']]
+        self.instrument_cache['tradeDate'] = _format_trade_date
 
     def get_instrument_contract(self, instrument_ids: list = [], product_ids: list = []):
         df = DataAPI.FutuGet(secID=u"", ticker=instrument_ids, exchangeCD=u"", contractStatus="",

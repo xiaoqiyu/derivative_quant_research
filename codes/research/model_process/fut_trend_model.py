@@ -432,8 +432,6 @@ def save_param_model(product_id='rb'):
         out_file.writelines('{}\n'.format(std_str.strip(',')))
 
 
-
-
 if __name__ == '__main__':
     # train base, delete existing model file, it will train from scratch
     train_all(model_name='rnn', product_id='rb', start_date='2021-01-04', end_date='2021-01-15', train_base=True)

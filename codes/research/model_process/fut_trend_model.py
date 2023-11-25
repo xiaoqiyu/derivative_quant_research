@@ -145,7 +145,7 @@ class RNNModel(object):
         first_model = True
         # in one epoch not load checkpoint
         # if not train_base:  # incremental training when there is already a base model
-        EPOCH = 10
+        EPOCH = 50
         learning_rate_gamma = 0.1
         if os.path.exists(_rnn_model_path):
             epoch, rnn, optimizer, cache_train_loss, cache_test_loss = self.load_torch_checkpoint(rnn, optimizer,
@@ -188,7 +188,7 @@ class RNNModel(object):
         logger.info(
             "Get dataloader for train:{0}-{1}, valid:{2}-{3}".format(start_date, _train_end_date, _val_start_date,
                                                                      end_date))
-        train_data_loader, test_data_loader = gen_train_test_features(data_fetcher=self.data_fetcher,
+        train_data_loader, val_data_loader = gen_train_test_features(data_fetcher=self.data_fetcher,
                                                                       param_model=param_model,
                                                                       product_id=product_id,
                                                                       freq="{0}S".format(SEC_INTERVAL),
@@ -198,7 +198,7 @@ class RNNModel(object):
                                                                       test_start_date=_val_start_date,
                                                                       test_end_date=end_date)
         logger.info('train data loader size:{0},val data loader size:{1}'.format(train_data_loader.dataset.size(),
-                                                                                 test_data_loader.dataset.size()))
+                                                                                 val_data_loader.dataset.size()))
 
         for i in range(EPOCH):
             total_train_loss = []
@@ -223,15 +223,18 @@ class RNNModel(object):
                 optimizer.step()  # apply gradients
                 total_train_loss.append(loss.item())
             train_loss.append(np.mean(total_train_loss))  # 存入平均交叉熵
+
+            if i % 10 != 0:
+                continue
             step_val_loss = []
             rnn.eval()  # 进入样本外测试模式
 
             curr_val_predicts = []
             curr_val_label = []
             with torch.no_grad():
-                prediction = rnn(test_data_loader.dataset[:, :, :-1])
-                val_predicts_epoch = rnn.predict(test_data_loader.dataset[:, :, :-1])
-                val_labels_epoch = test_data_loader.dataset[:, 0, -1]
+                prediction = rnn(val_data_loader.dataset[:, :, :-1])
+                val_predicts_epoch = rnn.predict(val_data_loader.dataset[:, :, :-1])
+                val_labels_epoch = val_data_loader.dataset[:, 0, -1]
                 val_labels_epoch = val_labels_epoch.type(torch.long).to(device)
                 if prediction.size()[0] == val_labels_epoch.size()[0]:
                     loss = loss_func(prediction, val_labels_epoch)  # calculate loss
@@ -262,22 +265,22 @@ class RNNModel(object):
             _acc2 = round(float(_correct_num2 / pred_2), 2) if pred_2 else 0.0
             _train_loss = round(float(np.mean(total_train_loss)), 4)
             _acc = round(float(_correct_num / len(curr_val_predicts)), 4)
-            curr_epoch_test_loss = round(float(np.mean(step_val_loss)), 4)
-            val_loss.append(curr_epoch_test_loss)
+            curr_epoch_val_loss = round(float(np.mean(step_val_loss)), 4)
+            val_loss.append(curr_epoch_val_loss)
             logger.info(
                 "Epoch:{0},true 0/1/2:({1}/{2}/{3}),pred 0/1/2:({4}/{5}/{6}),acc 0/1/2:({7}/{8}/{9}),train loss:{10}, "
                 "valid loss:{11}, acc:{12},learning rate:{13}".format(
                     i, true_0, true_1, true_2,
-                    pred_0, pred_1, pred_2, _acc0, _acc1, _acc2, _train_loss, curr_epoch_test_loss, _acc,
+                    pred_0, pred_1, pred_2, _acc0, _acc1, _acc2, _train_loss, curr_epoch_val_loss, _acc,
                     mult_step_scheduler.get_lr()))
             # TODO remove hardcode, save model(parameter) for better valid loss and accuracy > 0.5
-            # if first_model or (val_loss and curr_epoch_test_loss < min_val_loss and _acc > 0.5):
-            if first_model or (val_loss and curr_epoch_test_loss < min_val_loss):
+            # if first_model or (val_loss and curr_epoch_val_loss < min_val_loss and _acc > 0.5):
+            if first_model or (val_loss and curr_epoch_val_loss < min_val_loss and _acc > 0.3):
                 logger.info("Epoch:{0} Save model with val_loss:{1} and prev val loss:{2}, accu:{3}".format(i,
-                                                                                                            curr_epoch_test_loss,
+                                                                                                            curr_epoch_val_loss,
                                                                                                             min_val_loss,
                                                                                                             _acc))
-                min_val_loss = curr_epoch_test_loss
+                min_val_loss = curr_epoch_val_loss
                 # self.save_torch_checkpoint(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
                 self.save_model(i, rnn, optimizer, train_loss, min_val_loss, _rnn_model_path)
                 self.save_model(i, rnn, optimizer, train_loss, min_val_loss, _rnn_model_path_pt)
@@ -295,9 +298,9 @@ class RNNModel(object):
         plt.plot(val_loss, color='b')
         plt.legend(['train_loss', 'val_loss'])
         train_loss_track_path = os.path.join(_base_dir,
-                                             'data\models\\tsmodels\\{0}_train_loss_{1}'.format(
+                                             'data\models\\tsmodels\\{0}_train_loss_{1}_{2}_{3}'.format(
                                                  self.model_name,
-                                                 product_id))
+                                                 product_id, start_date, end_date))
         logger.info(
             'Complete train for epoch:{0}, save train result figure to :{1}'.format(i, train_loss_track_path))
         plt.savefig(train_loss_track_path)

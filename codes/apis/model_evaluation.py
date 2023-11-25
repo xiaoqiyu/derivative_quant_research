@@ -68,7 +68,7 @@ def model_evaluation_v0(start_date='2021-03-01', end_date='2021-12-31', infer_we
                                     train_end_date=train_end_date, infer_start_date=infer_start_date)
 
 
-def model_evaluation(start_date='2021-01-04', end_date='2021-12-31', infer_weeks=12, product_id='rb',
+def model_evaluation(start_date='2021-01-04', end_date='2021-06-30', infer_weeks=6, product_id='m',
                      model_name='rnn'):
     # incremental training
     week_start_end = data_fetcher.get_week_start_end(start_date=start_date, end_date=end_date)

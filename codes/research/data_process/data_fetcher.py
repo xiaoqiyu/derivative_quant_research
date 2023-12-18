@@ -127,7 +127,10 @@ class DataFetcher(object):
 if __name__ == '__main__':
     uqer_client = uqer.Client(token="e4ebad68acaaa94195c29ec63d67b77244e60e70f67a869585e14a7fe3eb8934")
     data_fetcher = DataFetcher(uqer_client)
-    # data_fetcher.get_instrument_mkt(product_ids=['rb'], start_date='20210704', end_date='20210715')
+    start_date = '20231101'
+    end_date = '20231215'
+    data_fetcher.get_instrument_mkt(product_ids=['rb','m'], start_date='20231101', end_date='20231215')
+    print(data_fetcher.instrument_cache)
     # # ret = obj.load_tick_data(start_date='20210704', end_date='20210715', product_ids=['rb'], main_con_flag=1,
     # #                          if_filter=True)
     # data_fetcher.get_instrument_contract(product_ids=['rb'])
@@ -136,4 +139,4 @@ if __name__ == '__main__':
     #                                        if_filter=True)
     # tick_mkt = tick_mkt.set_index('InstrumentID').join(
     #     data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
-    data_fetcher.get_week_start_end(start_date='2021-03-01', end_date='2021-12-31')
+    # data_fetcher.get_week_start_end(start_date='2021-03-01', end_date='2021-12-31')

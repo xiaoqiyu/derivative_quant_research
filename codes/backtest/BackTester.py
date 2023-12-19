@@ -8,6 +8,8 @@
 import os
 import sys
 
+import pandas as pd
+
 _base_dir = os.path.join(os.path.abspath(os.path.join(__file__, "../../..")))
 sys.path.append(_base_dir)
 
@@ -85,13 +87,14 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     tick_mkt = tick_mkt.set_index('InstrumentID').join(
         data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
 
-
     # init factor, position account signal
     factor = Factor(product_id=product_id, instrument_id=instrument_id, trade_date=trade_date)
     position = Position()
     account = Account()
-    signal = MinSignal(factor=factor, position=position, instrument_id=instrument_id, trade_date=trade_date,
-                       product_id=product_id)
+    # signal = MinSignal(factor=factor, position=position, instrument_id=instrument_id, trade_date=trade_date,
+    #                    product_id=product_id)
+    signal = ClfSignal(factor=factor, position=position, instrument_id=instrument_id,
+                       trade_date=trade_date, product_id=product_id)
 
     # Init backtest params
     open_fee = float(options.get('open_fee') or 3.0)
@@ -114,6 +117,7 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     options.update({'stop_loss': 10.0})
     options.update({'risk_duration': 30})
     options.update({'vol_limit': 5})
+    options.update({'signal_names': 'ma'})
 
     # 逐tick backtest开始
     values = tick_mkt.values
@@ -129,6 +133,8 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
             logger.warn("Error for mkt/tick, ignore the trade date:{0}".format(trade_date))
             return (total_return, account.fee, 0, account.transaction)
         try:
+            if idx == 600:
+                print('check')
             curr_factor = factor.update_factor(item, idx=idx, multiplier=item[-1], lag_long=SEQUENCE,
                                                lag_short=SEC_INTERVAL)
         except Exception as ex:
@@ -355,18 +361,16 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
              'correct_long_open': [], 'wrong_long_open': [], 'correct_short_open': [], 'wrong_short_open': [],
              'average_holding_time': [], 'max_holding_time': [], 'min_holding_time': []
              })
-
-    result_df = result_df.append(
-        {'trade_date': trade_date, 'product_id': product_id, 'instrument_id': instrument_id,
-         'total_return_final': total_return, 'total_return_unclose': total_return_risk,
-         'total_fee': account.fee,
-         'unclosed_value': total_risk, 'precision': precision,
-         'long_open': long_open, 'short_open': short_open, 'correct_long_open': correct_long_open,
-         'wrong_long_open': wrong_long_open, 'correct_short_open': correct_short_open,
-         'wrong_short_open': wrong_short_open, 'average_holding_time': average_holding_time,
-         'max_holding_time': max_holding_time, 'min_holding_time': min_holding_time
-         }, ignore_index=True)
-
+    new_df = pd.DataFrame([{'trade_date': trade_date, 'product_id': product_id, 'instrument_id': instrument_id,
+                            'total_return_final': total_return, 'total_return_unclose': total_return_risk,
+                            'total_fee': account.fee,
+                            'unclosed_value': total_risk, 'precision': precision,
+                            'long_open': long_open, 'short_open': short_open, 'correct_long_open': correct_long_open,
+                            'wrong_long_open': wrong_long_open, 'correct_short_open': correct_short_open,
+                            'wrong_short_open': wrong_short_open, 'average_holding_time': average_holding_time,
+                            'max_holding_time': max_holding_time, 'min_holding_time': min_holding_time
+                            }])
+    result_df = pd.concat([result_df, new_df])
     result_df.to_csv(_backtest_path, index=False)
 
     # 画图，开平仓信号，问题处理一下

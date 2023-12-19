@@ -52,10 +52,12 @@ def ma_var_3(factor: Factor = None, params: dict = {}) -> int:
 
 
 def ma_var_4(factor: Factor = None, params: dict = {}) -> int:
-    if len(factor.vwap_ls_diff) > 2:
+    if factor.get_cir_size() > 2:
         try:
-            curr_ls_diff = factor.vwap_ls_diff[-1]
-            last_ls_diff = factor.vwap_ls_diff[-2]
+            _factor = factor.get_factor()
+            _last_factor = factor.get_last_factor()
+            curr_ls_diff = _factor.get('ma_long') - _factor.get('ma_short')
+            last_ls_diff = _last_factor.get('ma_long') - _last_factor.get('ma_short')
         except Exception as ex:
             print(ex)
         if last_ls_diff < 0 and curr_ls_diff > 0:

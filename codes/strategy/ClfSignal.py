@@ -51,13 +51,20 @@ class ClfSignal(Signal):
         stop_loss = float(params.get('stop_loss')) or 20.0
         multiplier = int(params.get('multiplier')) or 10
         risk_duration = int(params.get('risk_duration')) or 10
-        open_fee = float(params.get('open_fee')) or 1.51
-        close_to_fee = float(params.get('close_t0_fee')) or 0.0
-
-        fee = (open_fee + close_to_fee) / multiplier
+        # FIXME reorgaonize the fee
+        # open_fee = float(params.get('open_fee', 0.0)) or 1.51
+        # close_to_fee = float(params.get('close_t0_fee')) or 0.0
+        # fee = (open_fee + close_to_fee) / multiplier
         fee = 0  # FIXME remove the hardcode, consider fee in strop profit and loss
         _position = self.position.get_position(instrument_id)
 
+        _factor = self.factor.get_factor()
+        _update_time = _factor.get('update_time')
+        _last_price = _factor.get('last_price')
+
+        _sec, _msec = _update_time.split('.')
+
+        # TODO refactor
         _sec = int(self.factor.update_time[-1].split()[-1].split('.')[0][-2:])
         _min = int(self.factor.update_time[-1].split()[-1].split('.')[0][-5:-3])
         # risk check
@@ -83,16 +90,16 @@ class ClfSignal(Signal):
             'ma': ma_rule(self.factor, params=params.get('ma')),
             # 'reg': reg_rule(self.factor, params=self.reg_params),
             # 'spread': spread_rule(self.factor),
-            'dual': dual_thrust(self.factor,
-                                params={'daily_cache': params.get('daily_cache'), 'dual': params.get('dual')})
+            # 'dual': dual_thrust(self.factor,
+            #                     params={'daily_cache': params.get('daily_cache'), 'dual': params.get('dual')})
 
         }
 
         for sig_name in signal_lst:
             _score = signal_map.get(sig_name)
             total_score += _score
-            if _score:
-                print("get score {0} for signal {1} for time:{2}".format(_score, sig_name, _update_time))
+            # if _score:
+            #     print("get score {0} for signal {1} for time:{2}".format(_score, sig_name, _update_time))
 
         pred_label = 0
         if total_score >= long_signal_benchmark:
@@ -165,6 +172,7 @@ class ClfSignal(Signal):
                 for item in _position:
                     if item[0] == define.LONG:
                         # print('check close long')
+                        # FIXME 参考 minsig这里不考虑fee了，简化逻辑，在设置stop_profit 和 stop_loss时候考虑就行
                         _is_close = (self.factor.last_price[-1] > item[1] + stop_profit + fee) or (
                                 self.factor.last_price[-1] < item[1] - stop_loss - fee)  # stop profit or stop  loss
                         if _is_close:

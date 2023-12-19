@@ -19,6 +19,11 @@ class rqueue(object):
         self.lst = []
         self.curr_size = 0
 
+    def __getitem__(self, item):
+        if item >= self.curr_size:
+            raise ValueError("index out of range")
+        return self.lst[item]
+
     def append(self, val):
         if self.curr_size < self.size:
             self.lst.append(val)
@@ -100,6 +105,18 @@ class Factor(object):
         self.log_return60 = []
         self.mid_log_return = []
         self.vwap_ls_diff = []
+        self.factor_name = ['last_price', 'curr_max', 'curr_min', 'curr_spread', 'curr_mid', 'curr_vwap', 'log_return',
+                            'log_return_short', 'log_return_short', 'mid_log_return_short', 'mid_log_return_long',
+                            'ma_short', 'ma_long', 'curr_vol', 'curr_interest','update_time']
+
+    def get_factor(self):
+        return dict(zip(self.factor_name, self.curr_factor))
+
+    def get_last_factor(self):
+        return dict(zip(self.factor_name, self.last_factor))
+
+    def get_cir_size(self):
+        return self.last_price.rq_size()
 
     def update_factor(self, tick=[], *args, **kwa):
         '''
@@ -109,7 +126,7 @@ class Factor(object):
         :param kwa:
         :return:
         '''
-        last_price = tick[3]
+
         vol = tick[7]  # 当前成交量，和live 不同
         turnover = tick[6]  # 当前成交额，和live不同
         _update_time = tick[2]
@@ -162,9 +179,6 @@ class Factor(object):
         _curr_max = max(_prev_max, _curr_last)
         _curr_min = min(_prev_min, _curr_last)
 
-        if len(self.last_mkt) > 0:
-            pass
-
         if cir_size >= self.long_windows:
             _log_return_long = self.last_factor[8] + _log_return - math.log(self.last_price.get(1)) - math.log(
                 self.last_price.get(1))
@@ -182,6 +196,7 @@ class Factor(object):
             _ma_short = _turnover_short / _vol_short
             _ma_ls_diff_curr = _ma_short - _ma_long
             _ma_ls_diff_last = self.last_factor[11] - self.last_factor[12]
+            # self.vwap_ls_diff.append(_ma_long-_ma_short)
         elif cir_size >= self.short_windows:
             _ma_long = _curr_vwap
             _log_return_short = self.last_factor[7] + _log_return - math.log(self.last_price.get(1)) - math.log(
@@ -190,9 +205,11 @@ class Factor(object):
             _mid_log_return_short = self.last_factor[9] + _mid_log_return - math.log(self.mid_price[1]) - math.log(
                 self.mid_price[0])
             _ma_short = _curr_vwap
+            # self.vwap_ls_diff.append(np.nan)
         else:
             _ma_long = _curr_vwap
             _ma_short = _curr_vwap
+            # self.vwap_ls_diff.append(np.nan)
 
         # time series cached factor
         self.last_price.append(_curr_last)
@@ -202,7 +219,12 @@ class Factor(object):
         self.vol.append(_curr_vol)
         self.update_time.append(_update_time)
 
-        ret_factor = copy.deepcopy(self.curr_factor)
+
+        # ret_factor = copy.deepcopy(self.curr_factor)
+
+        self.last_factor.clear()
+        for item in self.curr_factor:
+            self.last_factor.append(item)
         # currentfactorupdate
         self.curr_factor.clear()
         self.curr_factor.append(_curr_last)  # factor vector:0
@@ -220,10 +242,9 @@ class Factor(object):
         self.curr_factor.append(_ma_long)  # // vector: 12;        factor: 16
         self.curr_factor.append(_curr_vol)  # vector: 13;factor: 17
         self.curr_factor.append(_curr_interest)  # vector14; factor: 18
+        self.curr_factor.append(_update_time) # vector15; updatetime #TODO check with simulation
 
-        self.last_factor.clear()
-        for item in self.curr_factor:
-            self.last_factor.append(item)
+
         self.last_mkt.clear()
         self.last_mkt.append(ask_price1)  # 0: askprice 1
         self.last_mkt.append(bid_price1)  # 1:bidprice 1
@@ -232,157 +253,157 @@ class Factor(object):
         self.last_mkt.append(_vol_buy)
         self.last_mkt.append(_vol_sell)
         self.last_mkt.append(_curr_interest)  # TODO interest is diff
-        return ret_factor
+        return self.curr_factor
 
-    # @timeit
-    def update_factor_bt(self, tick=[], *args, **kwargs):
-        # values from tick
-        last_price = tick[3]
-        vol = tick[7]
-        turnover = tick[6]
-        _update_time = tick[2]
-        bid_price1, ask_price1, bid_vol1, ask_vol1 = tick[-4:]
-
-        _mid = (bid_price1 * ask_vol1 + ask_price1 * bid_vol1) / (ask_vol1 + bid_vol1)
-        self.mid_price.append(_mid)
-        _range = kwargs.get('range') or 20
-        k1 = kwargs.get('k1') or 0.2
-        k2 = kwargs.get('k2') or 0.2
-        idx = kwargs.get('idx') or 0
-        lag_long = kwargs.get('lag_long') or 60
-        lag_short = kwargs.get('lag_short') or 20
-        _mul_num = kwargs.get('multiplier') or 1.0
-        self.open_turnover = turnover if self.open_turnover < 0 else self.open_turnover
-        self.open_vol = vol if self.open_vol < 0 else self.open_vol
-        self.last_price.append(last_price)
-        self.update_time.append(_update_time)
-        # "BidPrice1", "BidVolume1", "AskPrice1", "AskVolume1",
-
-        self.spread.append(ask_price1 - bid_price1)
-        self.b2s_vol.append(bid_vol1 / ask_vol1 if ask_vol1 > 0 else 1.0)
-        self.b2s_turnover.append(
-            ((bid_vol1 * bid_price1) / (ask_vol1 * ask_price1) if ask_vol1 * ask_price1 > 0 else 1.0))
-        # self.price_highest.append(max(self.last_price))
-        # self.price_lowest.append(min(self.last_price))
-        _vwap_val = None
-        try:
-            # if _update_time >= '21:00:00':
-            _tmp_vol = vol
-            _tmp_turnover = turnover
-            self.vol.append(_tmp_vol)
-            self.turnover.append(_tmp_turnover)
-            _vwap_val = (_tmp_turnover) / (_mul_num * (_tmp_vol))
-
-        except Exception as ex:
-            if self.vwap:
-                _vwap_val = self.vwap[-1]
-            else:
-                _vwap_val = last_price
-        self.vwap.append(_vwap_val)
-        self.upper_bound.append(_vwap_val + k1 * _range)
-        self.lower_bound.append(_vwap_val - k2 * _range)
-
-        # ma for fixed length
-        self.ma10.append(sum(self.last_price[-10:]) / len(self.last_price[-10:]))
-        self.ma20.append(sum(self.last_price[-20:]) / len(self.last_price[-20:]))
-        self.ma60.append(sum(self.last_price[-60:]) / len(self.last_price[-60:]))
-        self.ma120.append(sum(self.last_price[-120:]) / len(self.last_price[-120:]))
-
-        if len(self.turning) <= 1:
-            self.turning.append(last_price)
-            self.turning_idx.append(idx)
-        else:
-            _last_turn = self.turning[-1]
-            _last_turn1 = self.turning[-2]
-            _last_price = self.last_price[-2]
-            _last_price1 = self.last_price[-3]
-            if (last_price - _last_price) * (_last_price - _last_price1) <= 0:  # new turning
-                self.turning.append(_last_price)
-                self.turning_idx.append(idx - 1)
-            else:  # last turning
-                self.turning.append(_last_turn)
-                self.turning_idx.append(self.turning_idx[-1])
-        # print(self.turning)
-        if not self.slope:
-            self.slope.append(0.5)
-        else:
-            if idx == self.turning_idx[-1]:
-                self.slope.append(self.slope[-1])
-            else:
-                self.slope.append((last_price - self.turning[-1]) / (idx - self.turning_idx[-1]))
-
-        # factor for lag windows,
-        try:
-            if len(self.last_price) >= lag_long:  # long windows
-                _trend_long = (self.last_price[-1] - self.last_price[-lag_long]) / lag_long
-                _trend_short = (self.last_price[-1] - self.last_price[-lag_short]) / lag_short
-                self.trend_long.append(_trend_long)
-                self.trend_short.append(_trend_short)
-                self.trend_ls_ratio.append(
-                    self.trend_short[-1] / self.trend_long[-1] if self.trend_long[-1] != 0 else np.nan)
-
-                _ls_diff = sum(self.turnover[lag_long:]) / sum(self.vol[lag_long:]) - sum(
-                    self.turnover[lag_short:]) / sum(
-                    self.vol[lag_short:])
-                # _ls_diff = np.array(self.last_price[lag_long:]).mean() - np.array(self.last_price[lag_short:]).mean()
-                self.vwap_ls_diff.append(_ls_diff)
-
-
-            elif len(self.last_price) >= lag_short:  # short windows
-                _trend_short = (self.last_price[-1] - self.last_price[-lag_short]) / lag_short
-                self.trend_short.append(_trend_short)
-                self.trend_long.append(np.nan)
-                self.trend_ls_ratio.append(np.nan)
-                self.vwap_ls_diff.append(np.nan)
-
-            else:
-                self.trend_long.append(np.nan)
-                self.trend_short.append(np.nan)
-                self.trend_ls_ratio.append(np.nan)
-                self.vwap_ls_diff.append(np.nan)
-
-        except Exception as ex:
-            print(ex)
-
-        a = np.array([idx - self.turning_idx[-1], self.last_price[-1] - self.last_price[self.turning_idx[-1]]])
-        b = np.array([0, 1])
-        self.cos.append(a.dot(b) / (np.linalg.norm(a) * np.linalg.norm(b)))
-        if len(self.last_price) >= 2:
-            self.log_return.append(math.log(self.last_price[-1]) - math.log(self.last_price[-2]))
-        else:
-            self.log_return.append(np.nan)
-        if len(self.mid_price) >= 2:
-            self.mid_log_return.append(math.log(self.mid_price[-1]) - math.log(self.mid_price[-2]))
-        else:
-            self.mid_log_return.append(np.nan)
-        if len(self.log_return) > 10:
-            self.log_return10.append(sum(self.log_return[-10:]))
-        else:
-            self.log_return10.append(np.nan)
-        if len(self.last_price) != len(self.trend_long):
-            print('check')
-
-    def load_factor(self):
-        pass
-
-    def get_factor(self):
-        return {
-            'update_time': self.update_time[-1],
-            'last_price': self.last_price.get(-1)
-        }
-
-        # return {'slope': self.slope[-1],
-        #         'vwap': self.vwap[-1],
-        #         'spread': self.spread[-1],
-        #         'b2s_vol': self.b2s_vol[-1],
-        #         'cos': self.cos[-1],
-        #         'trend_ls_ratio': self.trend_ls_ratio[-1],
-        #         'log_return': self.log_return[-1],
-        #         'log_return_0': self.log_return10[-1],
-        #         'wap_log_return': self.mid_log_return[-1],
-        #         'update_time': self.update_time[-1],
-        #         'last_price': self.last_price[-1]
-        #         }
+    # # @timeit
+    # def update_factor_bt(self, tick=[], *args, **kwargs):
+    #     # values from tick
+    #     last_price = tick[3]
+    #     vol = tick[7]
+    #     turnover = tick[6]
+    #     _update_time = tick[2]
+    #     bid_price1, ask_price1, bid_vol1, ask_vol1 = tick[-4:]
+    #
+    #     _mid = (bid_price1 * ask_vol1 + ask_price1 * bid_vol1) / (ask_vol1 + bid_vol1)
+    #     self.mid_price.append(_mid)
+    #     _range = kwargs.get('range') or 20
+    #     k1 = kwargs.get('k1') or 0.2
+    #     k2 = kwargs.get('k2') or 0.2
+    #     idx = kwargs.get('idx') or 0
+    #     lag_long = kwargs.get('lag_long') or 60
+    #     lag_short = kwargs.get('lag_short') or 20
+    #     _mul_num = kwargs.get('multiplier') or 1.0
+    #     self.open_turnover = turnover if self.open_turnover < 0 else self.open_turnover
+    #     self.open_vol = vol if self.open_vol < 0 else self.open_vol
+    #     self.last_price.append(last_price)
+    #     self.update_time.append(_update_time)
+    #     # "BidPrice1", "BidVolume1", "AskPrice1", "AskVolume1",
+    #
+    #     self.spread.append(ask_price1 - bid_price1)
+    #     self.b2s_vol.append(bid_vol1 / ask_vol1 if ask_vol1 > 0 else 1.0)
+    #     self.b2s_turnover.append(
+    #         ((bid_vol1 * bid_price1) / (ask_vol1 * ask_price1) if ask_vol1 * ask_price1 > 0 else 1.0))
+    #     # self.price_highest.append(max(self.last_price))
+    #     # self.price_lowest.append(min(self.last_price))
+    #     _vwap_val = None
+    #     try:
+    #         # if _update_time >= '21:00:00':
+    #         _tmp_vol = vol
+    #         _tmp_turnover = turnover
+    #         self.vol.append(_tmp_vol)
+    #         self.turnover.append(_tmp_turnover)
+    #         _vwap_val = (_tmp_turnover) / (_mul_num * (_tmp_vol))
+    #
+    #     except Exception as ex:
+    #         if self.vwap:
+    #             _vwap_val = self.vwap[-1]
+    #         else:
+    #             _vwap_val = last_price
+    #     self.vwap.append(_vwap_val)
+    #     self.upper_bound.append(_vwap_val + k1 * _range)
+    #     self.lower_bound.append(_vwap_val - k2 * _range)
+    #
+    #     # ma for fixed length
+    #     self.ma10.append(sum(self.last_price[-10:]) / len(self.last_price[-10:]))
+    #     self.ma20.append(sum(self.last_price[-20:]) / len(self.last_price[-20:]))
+    #     self.ma60.append(sum(self.last_price[-60:]) / len(self.last_price[-60:]))
+    #     self.ma120.append(sum(self.last_price[-120:]) / len(self.last_price[-120:]))
+    #
+    #     if len(self.turning) <= 1:
+    #         self.turning.append(last_price)
+    #         self.turning_idx.append(idx)
+    #     else:
+    #         _last_turn = self.turning[-1]
+    #         _last_turn1 = self.turning[-2]
+    #         _last_price = self.last_price[-2]
+    #         _last_price1 = self.last_price[-3]
+    #         if (last_price - _last_price) * (_last_price - _last_price1) <= 0:  # new turning
+    #             self.turning.append(_last_price)
+    #             self.turning_idx.append(idx - 1)
+    #         else:  # last turning
+    #             self.turning.append(_last_turn)
+    #             self.turning_idx.append(self.turning_idx[-1])
+    #     # print(self.turning)
+    #     if not self.slope:
+    #         self.slope.append(0.5)
+    #     else:
+    #         if idx == self.turning_idx[-1]:
+    #             self.slope.append(self.slope[-1])
+    #         else:
+    #             self.slope.append((last_price - self.turning[-1]) / (idx - self.turning_idx[-1]))
+    #
+    #     # factor for lag windows,
+    #     try:
+    #         if len(self.last_price) >= lag_long:  # long windows
+    #             _trend_long = (self.last_price[-1] - self.last_price[-lag_long]) / lag_long
+    #             _trend_short = (self.last_price[-1] - self.last_price[-lag_short]) / lag_short
+    #             self.trend_long.append(_trend_long)
+    #             self.trend_short.append(_trend_short)
+    #             self.trend_ls_ratio.append(
+    #                 self.trend_short[-1] / self.trend_long[-1] if self.trend_long[-1] != 0 else np.nan)
+    #
+    #             _ls_diff = sum(self.turnover[lag_long:]) / sum(self.vol[lag_long:]) - sum(
+    #                 self.turnover[lag_short:]) / sum(
+    #                 self.vol[lag_short:])
+    #             # _ls_diff = np.array(self.last_price[lag_long:]).mean() - np.array(self.last_price[lag_short:]).mean()
+    #             self.vwap_ls_diff.append(_ls_diff)
+    #
+    #
+    #         elif len(self.last_price) >= lag_short:  # short windows
+    #             _trend_short = (self.last_price[-1] - self.last_price[-lag_short]) / lag_short
+    #             self.trend_short.append(_trend_short)
+    #             self.trend_long.append(np.nan)
+    #             self.trend_ls_ratio.append(np.nan)
+    #             self.vwap_ls_diff.append(np.nan)
+    #
+    #         else:
+    #             self.trend_long.append(np.nan)
+    #             self.trend_short.append(np.nan)
+    #             self.trend_ls_ratio.append(np.nan)
+    #             self.vwap_ls_diff.append(np.nan)
+    #
+    #     except Exception as ex:
+    #         print(ex)
+    #
+    #     a = np.array([idx - self.turning_idx[-1], self.last_price[-1] - self.last_price[self.turning_idx[-1]]])
+    #     b = np.array([0, 1])
+    #     self.cos.append(a.dot(b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+    #     if len(self.last_price) >= 2:
+    #         self.log_return.append(math.log(self.last_price[-1]) - math.log(self.last_price[-2]))
+    #     else:
+    #         self.log_return.append(np.nan)
+    #     if len(self.mid_price) >= 2:
+    #         self.mid_log_return.append(math.log(self.mid_price[-1]) - math.log(self.mid_price[-2]))
+    #     else:
+    #         self.mid_log_return.append(np.nan)
+    #     if len(self.log_return) > 10:
+    #         self.log_return10.append(sum(self.log_return[-10:]))
+    #     else:
+    #         self.log_return10.append(np.nan)
+    #     if len(self.last_price) != len(self.trend_long):
+    #         print('check')
+    #
+    # def load_factor(self):
+    #     pass
+    #
+    # def get_factor(self):
+    #     return {
+    #         'update_time': self.update_time[-1],
+    #         'last_price': self.last_price.get(-1)
+    #     }
+    #
+    #     # return {'slope': self.slope[-1],
+    #     #         'vwap': self.vwap[-1],
+    #     #         'spread': self.spread[-1],
+    #     #         'b2s_vol': self.b2s_vol[-1],
+    #     #         'cos': self.cos[-1],
+    #     #         'trend_ls_ratio': self.trend_ls_ratio[-1],
+    #     #         'log_return': self.log_return[-1],
+    #     #         'log_return_0': self.log_return10[-1],
+    #     #         'wap_log_return': self.mid_log_return[-1],
+    #     #         'update_time': self.update_time[-1],
+    #     #         'last_price': self.last_price[-1]
+    #     #         }
 
     def cache_factor(self):
         # factor_df = pandas.DataFrame({'last_price': self.last_price, 'vwap': self.vwap, 'upper_bound': self.upper_bound,

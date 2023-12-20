@@ -57,9 +57,13 @@ class DataFetcher(object):
             start_idx = idx + 1
         return ret
 
-    def get_instrument_mkt(self, product_ids: list = [], start_date: str = '', end_date: str = ''):
+    def get_instrument_mkt(self, product_ids: list = [], start_date: str = '', end_date: str = '',
+                           smain_con: bool = False):
         df = DataAPI.MktFutdGet(endDate=end_date, beginDate=start_date, pandas="1")
-        df = df.loc[(df['mainCon'] == 1) | (df['smainCon'] == 1)]  # 筛选出主力和次主力合约
+        if smain_con:
+            df = df.loc[(df['mainCon'] == 1) | (df['smainCon'] == 1)]  # 筛选出主力和次主力合约
+        else:
+            df = df.loc[(df['mainCon'] == 1)]  # 筛选出主力合约
         product_ids = [item.upper() for item in product_ids]
         self.instrument_cache = df.loc[(item in product_ids for item in df['contractObject'])]
         _format_trade_date = [item.replace('-', '') for item in self.instrument_cache['tradeDate']]
@@ -129,7 +133,7 @@ if __name__ == '__main__':
     data_fetcher = DataFetcher(uqer_client)
     start_date = '20231101'
     end_date = '20231215'
-    data_fetcher.get_instrument_mkt(product_ids=['rb','m'], start_date='20231101', end_date='20231215')
+    data_fetcher.get_instrument_mkt(product_ids=['rb', 'm'], start_date='20231101', end_date='20231215')
     print(data_fetcher.instrument_cache)
     # # ret = obj.load_tick_data(start_date='20210704', end_date='20210715', product_ids=['rb'], main_con_flag=1,
     # #                          if_filter=True)

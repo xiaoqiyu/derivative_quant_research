@@ -44,7 +44,7 @@ _df_instrument_id = _df.groupby(['contractObject'], as_index=True)['ticker', 'se
 _df_turnover = _df_instrument_id.join(_df_turnover).reset_index().sort_values(by='turnoverRate',
                                                                               ascending=False)
 
-comision = {'RB': 0.0001,
+commision = {'RB': 0.0001,
             'M': 1.51,
             'AU': 2.01,
             'AG': 0.00001,  # 黄金6，12.。。 10.01？？
@@ -108,7 +108,7 @@ def _process_fee(val, fee):
 
 print(_df_turnover.columns)
 for product, _, _, _, contract_value in list(_df_turnover.values):
-    _commission = comision.get(product.upper()) or 0.0
+    _commission = commision.get(product.upper()) or 0.0
     _close = close_today.get(product.upper()) or 0.0
     commission_lst.append(_process_fee(contract_value, _commission))
     close_today_lst.append(_process_fee(contract_value, _close))

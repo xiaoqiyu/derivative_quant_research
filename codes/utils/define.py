@@ -7,6 +7,7 @@
 
 # strategy constants
 # 定义策略回测相关的常量
+# TODO 定义enum
 NO_SIGNAL = -1
 LONG_OPEN = 0
 LONG_CLOSE = 1

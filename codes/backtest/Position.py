@@ -30,7 +30,6 @@ class Position(object):
         print("before update position:", self.position[instrument_id])
         if not _lst:
             print('pos not exist,add possition')
-            # self.open_position(instrument_id, long_short, price, timestamp, vol)
             update_lst.append([long_short, price, timestamp, vol])
         else:
             for item in _lst:
@@ -44,11 +43,12 @@ class Position(object):
                     update_lst.append(item)
                 elif _direction == define.LONG and order_type == define.LONG_CLOSE:
                     assert _vol >= vol
-                    if _vol == vol:
+                    if _vol == vol:#该持仓完全平仓，不用再维护该持仓记录
                         continue
                     item[1] = 0.0 if _vol == vol else (_price * _vol - price * vol) / (_vol - vol)
                     item[2] = timestamp
                     item[3] = _vol - vol
+                    update_lst.append(item)
                 elif _direction == define.SHORT and order_type == define.SHORT_OPEN:
                     item[0] = define.SHORT
                     item[1] = (_price * _vol + price * vol) / (_vol + vol)
@@ -57,11 +57,12 @@ class Position(object):
                     update_lst.append(item)
                 elif _direction == define.SHORT and order_type == define.SHORT_CLOSE:
                     assert _vol >= vol
-                    if _vol == vol:
+                    if _vol == vol:#该持仓完全平仓，不用再维护该持仓记录
                         continue
                     item[1] = 0.0 if _vol == vol else (_price * _vol - price * vol) / (_vol - vol)
                     item[2] = timestamp
                     item[3] = _vol - vol
+                    update_lst.append(item)
                 else:
                     update_lst.append(item)
         self.position[instrument_id] = update_lst

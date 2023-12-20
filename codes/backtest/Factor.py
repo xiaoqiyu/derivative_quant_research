@@ -118,7 +118,7 @@ class Factor(object):
     def get_cir_size(self):
         return self.last_price.rq_size()
 
-    def update_factor(self, tick=[], *args, **kwa):
+    def update_factor(self, tick=[]):
         '''
 
         :param tick: live的depth market

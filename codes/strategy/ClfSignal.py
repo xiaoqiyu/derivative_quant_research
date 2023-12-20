@@ -41,32 +41,28 @@ class ClfSignal(Signal):
 
     def __call__(self, *args, **kwargs):
         params = kwargs.get('params')  # is options
-        # _k = params.get('tick')[2].split()[1].split('.')[0]
-        # _update_time = params.get('tick')[2]
-        curr_factor = params.get('factor')
         _long, _short, long_price, short_price = 0, 0, 0.0, 0.0
         instrument_id = params.get('instrument_id')
-        # start_tick = int(params.get('start_tick')) or 2
-        stop_profit = float(params.get('stop_profit')) or 5.0
-        stop_loss = float(params.get('stop_loss')) or 20.0
+        stop_profit = float(params.get('stop_profit')) or 5
+        stop_loss = float(params.get('stop_loss')) or 5
         multiplier = int(params.get('multiplier')) or 10
         risk_duration = int(params.get('risk_duration')) or 10
-        # FIXME reorgaonize the fee
-        # open_fee = float(params.get('open_fee', 0.0)) or 1.51
-        # close_to_fee = float(params.get('close_t0_fee')) or 0.0
-        # fee = (open_fee + close_to_fee) / multiplier
-        fee = 0  # FIXME remove the hardcode, consider fee in strop profit and loss
+        open_fee = float(params.get('open_fee', 0.0)) or 1.51
+        close_today_fee = float(params.get('close_today_fee', 0.0)) or 0.0
+        fee = open_fee + close_today_fee
         _position = self.position.get_position(instrument_id)
 
         _factor = self.factor.get_factor()
         _update_time = _factor.get('update_time')
         _last_price = _factor.get('last_price')
 
-        _sec, _msec = _update_time.split('.')
+        # update_time: "yyyy-mm-dd hh:mm.ss.msec"
+        # _sec, _msec = _update_time.split('.')
+        _sec = int(_update_time.split()[1].split('.')[0].split(':')[-1])
+        _min = int(_update_time.split()[1].split('.')[0].split(':')[-2])
+        _msec = int(_update_time.split('.')[-1])
+        _order_data_field = SignalField()
 
-        # TODO refactor
-        _sec = int(self.factor.update_time[-1].split()[-1].split('.')[0][-2:])
-        _min = int(self.factor.update_time[-1].split()[-1].split('.')[0][-5:-3])
         # risk check
         _check_stop_profit_loss = (_min * 60 + _sec) % risk_duration
         # print("min:{0}, sec:{1}, check flag:{2}".format(_min, _sec, _check_stop_profit_loss))
@@ -79,7 +75,7 @@ class ClfSignal(Signal):
                     short_price = item[1]
                     _short += item[3]
         # order data in simulation
-        _order_data_field = SignalField()
+
         lst_pred_label = []
         signal_lst = params.get('signal_names').split(',')
         long_signal_benchmark = len(signal_lst) * (params.get('long_score_ratio') or 0.5)
@@ -108,65 +104,72 @@ class ClfSignal(Signal):
             pred_label = -1
         _vol_limit = params.get('vol_limit')
         _ins_vol = _long + _short
-        # print('pred_label:', pred_label)
-        if pred_label == 1:  # long signal
-            print("Get Long Signal=>", pred_label, 'long vol=>', _long, 'cur vol=>', _ins_vol, 'vol limit=>',
-                  _vol_limit,
-                  'last price=>', self.factor.last_price[-1], 'long price=>', long_price, 'short price=>', short_price,
-                  'stop profit=>', stop_profit, 'fee=>', fee)
-            if _long and _ins_vol < _vol_limit:  # 多仓未达风险则继续开多
-                print("more long open")
-                _order_data_field.direction = define.LONG
-                _order_data_field.signal_type = define.LONG_OPEN
-                _order_data_field.vol = _vol_limit - _ins_vol
-                _order_data_field.price = 0  # market order
-                return _order_data_field
-            elif _short and self.factor.last_price[-1] < short_price - stop_profit:  # 空仓则平空, 佣金暂不在此考虑
-                print('short close')
-                _order_data_field.direction = define.LONG
-                _order_data_field.signal_type = define.SHORT_CLOSE
-                _order_data_field.vol = _short
-                _order_data_field.price = 0
-                return _order_data_field
-            elif not _long and _ins_vol < _vol_limit:  # 未持多仓且未达风险则开多仓
-                print('no pos, long open')
-                _order_data_field.direction = define.LONG
-                _order_data_field.signal_type = define.LONG_OPEN
-                _order_data_field.vol = _vol_limit - _ins_vol
-                _order_data_field.price = 0  # market order
-                return _order_data_field
-            else:
-                print('no action for long signal')
+
+        # if not (_sec == 0 and _msec == 0):  # 没到分钟
+        #     # get signal for every minute
+        #     _order_data_field.signal_type = define.NO_SIGNAL
+        #     # return _order_data_field
+        if _sec == 0 and _msec == 0:  # 分钟时候才触发信号
+            if pred_label == 1:  # long signal
+                print("Get Long Signal=>", pred_label, 'long vol=>', _long, 'cur vol=>', _ins_vol, 'vol limit=>',
+                      _vol_limit,
+                      'last price=>', self.factor.last_price[-1], 'long price=>', long_price, 'short price=>',
+                      short_price,
+                      'stop profit=>', stop_profit, 'fee=>', fee)
+                if _long and _ins_vol < _vol_limit:  # 多仓未达风险则继续开多
+                    print("more long open")
+                    _order_data_field.direction = define.LONG
+                    _order_data_field.signal_type = define.LONG_OPEN
+                    _order_data_field.vol = _vol_limit - _ins_vol
+                    _order_data_field.price = 0  # market order
+                    return _order_data_field
+                elif _short and self.factor.last_price[-1] < short_price - stop_profit:  # 空仓则平空, 佣金暂不在此考虑
+                    print('short close')
+                    _order_data_field.direction = define.LONG
+                    _order_data_field.signal_type = define.SHORT_CLOSE
+                    _order_data_field.vol = _short
+                    _order_data_field.price = 0
+                    return _order_data_field
+                elif not _long and _ins_vol < _vol_limit:  # 未持多仓且未达风险则开多仓
+                    print('no pos, long open')
+                    _order_data_field.direction = define.LONG
+                    _order_data_field.signal_type = define.LONG_OPEN
+                    _order_data_field.vol = _vol_limit - _ins_vol
+                    _order_data_field.price = 0  # market order
+                    return _order_data_field
+                else:
+                    print('no action for long signal')
+                    pass
+            elif pred_label == -1:  # short signal
+                print("Get Short Signal=>", pred_label, 'short pos=>', _short, 'cur pos=>', _ins_vol, 'vol limit=>',
+                      _vol_limit, 'last price=>', self.factor.last_price[-1], 'long price=>', long_price,
+                      'short price', short_price, 'stop profit=>', stop_profit, 'fee=>', fee)
+                if _short and _ins_vol < _vol_limit:  # 空仓未达风险则继续开空
+                    print('more short open')
+                    _order_data_field.direction = define.SHORT
+                    _order_data_field.signal_type = define.SHORT_OPEN
+                    _order_data_field.vol = _vol_limit - _ins_vol
+                    _order_data_field.price = 0  # market order
+                    return _order_data_field
+                elif _long and self.factor.last_price[-1] > long_price + stop_profit:  # 多仓则平多，佣金暂不在此考虑
+                    print('long close')
+                    _order_data_field.direction = define.SHORT
+                    _order_data_field.signal_type = define.LONG_CLOSE
+                    _order_data_field.vol = _long
+                    _order_data_field.price = 0
+                    return _order_data_field
+                elif not _short and _ins_vol < _vol_limit:  # 未持空仓且未达风险则开空
+                    print('no short, short open')
+                    _order_data_field.direction = define.SHORT
+                    _order_data_field.signal_type = define.SHORT_OPEN
+                    _order_data_field.vol = _vol_limit - _ins_vol
+                    _order_data_field.price = 0  # market order
+                    return _order_data_field
+                else:
+                    print("no action for short signal")
+            else:  # no long short signal, check stop profit and loss
                 pass
-        elif pred_label == -1:  # short signal
-            print("Get Short Signal=>", pred_label, 'short pos=>', _short, 'cur pos=>', _ins_vol, 'vol limit=>',
-                  _vol_limit, 'last price=>', self.factor.last_price[-1], 'long price=>', long_price,
-                  'short price', short_price, 'stop profit=>', stop_profit, 'fee=>', fee)
-            if _short and _ins_vol < _vol_limit:  # 空仓未达风险则继续开空
-                print('more short open')
-                _order_data_field.direction = define.SHORT
-                _order_data_field.signal_type = define.SHORT_OPEN
-                _order_data_field.vol = _vol_limit - _ins_vol
-                _order_data_field.price = 0  # market order
-                return _order_data_field
-            elif _long and self.factor.last_price[-1] > long_price + stop_profit:  # 多仓则平多，佣金暂不在此考虑
-                print('long close')
-                _order_data_field.direction = define.SHORT
-                _order_data_field.signal_type = define.LONG_CLOSE
-                _order_data_field.vol = _long
-                _order_data_field.price = 0
-                return _order_data_field
-            elif not _short and _ins_vol < _vol_limit:  # 未持空仓且未达风险则开空
-                print('no short, short open')
-                _order_data_field.direction = define.SHORT
-                _order_data_field.signal_type = define.SHORT_OPEN
-                _order_data_field.vol = _vol_limit - _ins_vol
-                _order_data_field.price = 0  # market order
-                return _order_data_field
-            else:
-                print("no action for short signal")
-        else:  # no long short signal, check stop profit and loss
-            pass
+
         if _check_stop_profit_loss == 0:
             if _position:
                 for item in _position:

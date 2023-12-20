@@ -39,10 +39,19 @@ def backtest_report(start_date='2021-05-14', end_date='2021-05-14', product_id='
     df_transaction = pd.DataFrame(transactions,
                                   columns=['idx', 'instrument_id', 'trans_type', 'last_price',
                                            'fill_price', 'fill_lot', 'pos', 'fee', 'open_time', 'close_time',
-                                           'holding_time', 'curr_return','trade_date'])
-    df_transaction.to_csv(_transaction_path)
+                                           'holding_time', 'curr_return', 'trade_date'])
+    df_transaction.to_csv(_transaction_path, index=False)
     return ret
 
 
+def main():
+    start_date = '2021-02-01'
+    end_date = '2021-02-26'
+    # product_ids = ['rb', 'm', 'p', 'TA']
+    product_ids = ['TA']
+    for product_id in product_ids:
+        backtest_report(start_date=start_date, end_date=end_date, product_id=product_id)
+
+
 if __name__ == '__main__':
-    pprint.pprint(backtest_report(start_date='2021-12-01', end_date='2021-12-03', product_id='rb'))
+    main()

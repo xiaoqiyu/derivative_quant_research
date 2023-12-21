@@ -72,13 +72,14 @@ def evaluation_backtesting(init_capital=1000000):
         max_nv = max(item, max_nv)
     print("annual return=>", annual_return, "annual volatility=>", annual_vol, "max risk ratio=>", max(live_risk_lst),
           "max drawdown=>", max_drawdown)
-    # plt.plot(nv_lst)
-    # plt.show()
+    _backtest_path = os.path.join(_base_dir, 'data\\backtest\\backtest.jpg')
+    plt.plot(nv_lst)
+    plt.savefig(_backtest_path)
 
 
 def main():
     start_date = '2021-02-01'
-    end_date = '2021-02-03'
+    end_date = '2021-02-26'
     product_ids = ['rb', 'm', 'p', 'TA']
     # product_ids = ['RB', 'M', 'AU', 'AG', 'NI', 'I', 'SC', 'FU', 'Y', 'P', 'RM', 'CU', 'AL', 'ZN', 'RU', 'BU', 'B', 'C',
     #                'SR', 'CF', 'TA']
@@ -100,8 +101,8 @@ def main():
         result_df = backtest_report(start_date=start_date, end_date=end_date, product_id=product_id,
                                     result_df=result_df, capital=each_product_capital)
     result_df.to_csv(_backtest_path, index=False)
+    evaluation_backtesting(init_capital=capital)
 
 
 if __name__ == '__main__':
-    # main()
-    evaluation_backtesting()
+    main()

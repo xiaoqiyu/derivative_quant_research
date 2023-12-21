@@ -127,3 +127,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+codes/strategy/trade_rules.py
+codes/strategy/ClfSignal.py

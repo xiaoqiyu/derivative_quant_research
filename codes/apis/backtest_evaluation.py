@@ -80,10 +80,10 @@ def evaluation_backtesting(init_capital=1000000):
 def main():
     start_date = '2021-02-01'
     end_date = '2021-02-26'
-    product_ids = ['rb', 'm', 'p', 'TA']
-    # product_ids = ['RB', 'M', 'AU', 'AG', 'NI', 'I', 'SC', 'FU', 'Y', 'P', 'RM', 'CU', 'AL', 'ZN', 'RU', 'BU', 'B', 'C',
-    #                'SR', 'CF', 'TA']
-    capital = 1000000
+    # product_ids = ['rb', 'm', 'p', 'TA']
+    product_ids = ['RB', 'M', 'AU', 'AG', 'NI', 'I', 'SC', 'FU', 'Y', 'P', 'RM', 'CU', 'AL', 'ZN', 'RU', 'BU', 'B', 'C',
+                   'SR', 'CF', 'TA']
+    capital = 2000000
     risk_ratio = 0.5
     # TODO allocate by performance(e.g. sharp ratio), not equal
     each_product_capital = int(capital * risk_ratio / len(product_ids))

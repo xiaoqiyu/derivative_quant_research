@@ -36,16 +36,16 @@ _log_path = os.path.join(_base_dir, 'data\logs\{0}'.format(os.path.split(__file_
 logger = Logger(_log_path, 'INFO', __name__).get_log()
 
 conf_commision = {'RB': 0.0001,
-             'M': 1.51,
-             'AU': 2.01,
-             'AG': 0.00001,  # 黄金6，12.。。 10.01？？
-             'NI': 3.01,
-             'I': 0.00010,
-             'SC': 20.01,
-             'FU': 0.000050,  # 非1,5,9:0.00001+0.01
-             'Y': 2.51,
-             'P': 2.51,
-             'M': 1.51,
+                  'M': 1.51,
+                  'AU': 2.01,
+                  'AG': 0.00001,  # 黄金6，12.。。 10.01？？
+                  'NI': 3.01,
+                  'I': 0.00010,
+                  'SC': 20.01,
+                  'FU': 0.000050,  # 非1,5,9:0.00001+0.01
+                  'Y': 2.51,
+                  'P': 2.51,
+                  'M': 1.51,
                   'RM': 1.51,
                   'CU': 0.000050,
                   'AL': 3.01,
@@ -61,16 +61,16 @@ conf_commision = {'RB': 0.0001,
 
                   }
 conf_close_today = {'RB': 0.0001,
-               'M': 1.51,
-               'AU': 0.0,  # 看手续费
-               'AG': 0.00001,
-               'NI': 3.01,
-               'I': 0.00010,
-               'SC': 0.0,
-               'FU': 0.0,
-               'Y': 2.51,
-               'P': 2.51,
-               'M': 1.51,
+                    'M': 1.51,
+                    'AU': 0.0,  # 看手续费
+                    'AG': 0.00001,
+                    'NI': 3.01,
+                    'I': 0.00010,
+                    'SC': 0.0,
+                    'FU': 0.0,
+                    'Y': 2.51,
+                    'P': 2.51,
+                    'M': 1.51,
                     'RM': 1.51,
                     'CU': 0.00010,
                     'AL': 3.01,
@@ -86,16 +86,16 @@ conf_close_today = {'RB': 0.0001,
                     }
 # 每日千分之一回报，log(1.001)=0.000999，~ 0.001，年化 0.25，假设两倍杠杆；则实际交易信号收益目标为万五
 conf_stop_profit = {'RB': 0.0005,
-               'M': 0.0005,
-               'AU': 0.0005,
-               'AG': 0.0005,
-               'NI': 0.0005,
-               'I': 0.0005,
-               'SC': 0.0005,
-               'FU': 0.0005,
-               'Y': 0.0005,
-               'P': 0.0005,
-               'M': 0.0005,
+                    'M': 0.0005,
+                    'AU': 0.0005,
+                    'AG': 0.0005,
+                    'NI': 0.0005,
+                    'I': 0.0005,
+                    'SC': 0.0005,
+                    'FU': 0.0005,
+                    'Y': 0.0005,
+                    'P': 0.0005,
+                    'M': 0.0005,
                     'RM': 0.0005,
                     'CU': 0.0005,
                     'AL': 0.0005,
@@ -111,16 +111,16 @@ conf_stop_profit = {'RB': 0.0005,
                     }
 
 conf_stop_loss = {'RB': 0.001,
-             'M': 0.001,
-             'AU': 0.001,
-             'AG': 0.001,
-             'NI': 0.001,
-             'I': 0.001,
-             'SC': 0.001,
-             'FU': 0.001,
-             'Y': 0.001,
-             'P': 0.001,
-             'M': 0.001,
+                  'M': 0.001,
+                  'AU': 0.001,
+                  'AG': 0.001,
+                  'NI': 0.001,
+                  'I': 0.001,
+                  'SC': 0.001,
+                  'FU': 0.001,
+                  'Y': 0.001,
+                  'P': 0.001,
+                  'M': 0.001,
                   'RM': 0.001,
                   'CU': 0.001,
                   'AL': 0.001,
@@ -135,42 +135,42 @@ conf_stop_loss = {'RB': 0.001,
                   # 'SP':,
                   }
 
-conf_vol_limit = {'RB': 5,
-             'M': 5,
-             'AU': 5,
-             'AG': 5,
-             'NI': 5,
-             'I': 5,
-             'SC': 5,
-             'FU': 5,
-             'Y': 5,
-             'P': 5,
-             'M': 5,
-                  'RM': 5,
-                  'CU': 5,
-                  'AL': 5,
-                  'ZN': 5,
-                  'RU': 5,
-                  'BU': 5,
-                  'B': 5,
-                  'C': 5,
-                  'SR': 5,
-                  'CF': 5,
-                  'TA': 5,
-                  # 'SP':,
-                  }
+# conf_vol_limit = {'RB': 5,
+#                   'M': 5,
+#                   'AU': 5,
+#                   'AG': 5,
+#                   'NI': 5,
+#                   'I': 5,
+#                   'SC': 5,
+#                   'FU': 5,
+#                   'Y': 5,
+#                   'P': 5,
+#                   'M': 5,
+#                   'RM': 5,
+#                   'CU': 5,
+#                   'AL': 5,
+#                   'ZN': 5,
+#                   'RU': 5,
+#                   'BU': 5,
+#                   'B': 5,
+#                   'C': 5,
+#                   'SR': 5,
+#                   'CF': 5,
+#                   'TA': 5,
+#                   # 'SP':,
+#                   }
 
 conf_change_ticks = {'RB': 1,
-                'M': 1,
-                'AU': 1,
-                'AG': 1,
-                'NI': 1,
-                'I': 1,
-                'SC': 1,
-                'FU': 1,
-                'Y': 1,
-                'P': 1,
-                'M': 1,
+                     'M': 1,
+                     'AU': 1,
+                     'AG': 1,
+                     'NI': 1,
+                     'I': 1,
+                     'SC': 1,
+                     'FU': 1,
+                     'Y': 1,
+                     'P': 1,
+                     'M': 1,
                      'RM': 1,
                      'CU': 1,
                      'AL': 1,
@@ -225,7 +225,7 @@ def stop_profit_loss(risk_input: dict = {}, risk_conf: dict = {}) -> tuple:
 
 
 def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', trade_date: str = '2021-07-01',
-                   options: dict = {}) -> tuple:
+                   options: dict = {}, result_df: pd.DataFrame = None, capital: int = 0) -> tuple:
     # Init contract static and daily data
     # TODO 可优化，data_fetcher 只在外面对所有品种和时间查询一次
     data_fetcher.get_instrument_mkt(product_ids=[product_id], start_date=trade_date, end_date=trade_date)
@@ -235,15 +235,20 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     tick_mkt = data_fetcher.load_tick_data(start_date=trade_date, end_date=trade_date, instrument_ids=_instruments,
                                            main_con_flag=1, filter_start_time=None, filter_end_time=None,
                                            if_filter=True)
+    pre_settle_price = list(data_fetcher.instrument_cache['preSettlePrice'])[0]
     multiplier = list(data_fetcher.contract_cache[data_fetcher.contract_cache.ticker == instrument_id]['contMultNum'])[
+        0]
+    margin_ratio = data_fetcher.contract_cache[data_fetcher.contract_cache.ticker == instrument_id]['tradeMarginRatio'][
         0]
     tick_mkt = tick_mkt.set_index('InstrumentID').join(
         data_fetcher.contract_cache[['ticker', 'contMultNum']].set_index('ticker')).reset_index()
-
+    _order_vol_limit = math.floor(capital/(pre_settle_price * multiplier*margin_ratio / 100))
+    # _order_vol_limit = conf_vol_limit.get(product_id.upper())
+    init_margin = round(pre_settle_price * multiplier * _order_vol_limit * margin_ratio / 100, 2)
     # init factor, position account signal
     factor = Factor(product_id=product_id, instrument_id=instrument_id, trade_date=trade_date)
     position = Position()
-    account = Account()
+    account = Account(init_margin=init_margin, risk_ratio=0.5, init_capital=capital)
     signal = ClfSignal(factor=factor, position=position, instrument_id=instrument_id,
                        trade_date=trade_date, product_id=product_id)
 
@@ -273,7 +278,7 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     options.update({'trade_date': trade_date})
 
     options.update({'risk_duration': 30})
-    options.update({'vol_limit': 5})
+    options.update({'vol_limit': _order_vol_limit})
     options.update({'signal_names': 'ma'})
     options.update({'open_fee': fee_lst[0]})
     options.update({'close_today_fee': fee_lst[1]})
@@ -283,6 +288,8 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     total_tick_num = len(values)
     ab_cnt = 0
     close_timestamp = None
+    max_margin = init_margin
+    max_risk_ratio = 0
     for idx, item in enumerate(values):
         _last = item[3]
         _update_time = item[2]
@@ -290,7 +297,7 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
         # TODO remove hardcode for the threshold
         if float(ab_cnt / total_tick_num) > 0.25:
             logger.warn("Error for mkt/tick, ignore the trade date:{0}".format(trade_date))
-            return total_return, account.fee, 0, account.transaction
+            return result_df, account.transaction
         try:
             curr_factor = factor.update_factor(item)
         except Exception as ex:
@@ -339,7 +346,10 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                      0.0])  # 收益
                 position.update_position(instrument_id=instrument_id, long_short=LONG, price=_fill_price,
                                          timestamp=_update_time, vol=_fill_lot, order_type=LONG_OPEN)
-                account.update_fee(fee_lst[0] * _fill_lot)
+                curr_margin = position.get_live_margin(margin_ratio, multiplier)
+                _fee, _margin, _live_risk = account.update_account(fee_lst[0] * _fill_lot, curr_margin)
+                max_margin = max(max_margin, _margin)
+                max_risk_ratio = max(max_risk_ratio, _live_risk)
 
         elif _signal.signal_type == SHORT_OPEN:
             _fill_price, _fill_lot = get_fill_ret(order=[SHORT, _signal.price, _signal.vol], mkt=item)
@@ -364,7 +374,10 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                 position.update_position(instrument_id=instrument_id, long_short=SHORT, price=_fill_price,
                                          timestamp=_update_time,
                                          vol=_fill_lot, order_type=SHORT_OPEN)
-                account.update_fee(fee_lst[0] * _fill_lot)
+                curr_margin = position.get_live_margin(margin_ratio, multiplier)
+                _fee, _margin, _live_risk = account.update_account(fee_lst[0] * _fill_lot, curr_margin)
+                max_margin = max(max_margin, _margin)
+                max_risk_ratio = max(max_risk_ratio, _live_risk)
 
         elif _signal.signal_type == LONG_CLOSE:
             logger.info("Long Close with update time:{0}------".format(_update_time))
@@ -400,7 +413,11 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                          curr_return])  # 持有收益
                     position.update_position(instrument_id=instrument_id, long_short=SHORT, price=_fill_price,
                                              timestamp=_update_time, vol=_fill_lot, order_type=LONG_CLOSE)
-                    account.update_fee(fee_lst[1] * _fill_lot)
+                    # account.update_account(fee_lst[1] * _fill_lot)
+                    curr_margin = position.get_live_margin(margin_ratio, multiplier)
+                    _fee, _margin, _live_risk = account.update_account(fee_lst[0] * _fill_lot, curr_margin)
+                    max_margin = max(max_margin, _margin)
+                    max_risk_ratio = max(max_risk_ratio, _live_risk)
         elif _signal.signal_type == SHORT_CLOSE:
             logger.info("Short Close with update time:{0}------".format(_update_time))
             _pos = position.get_position_side(instrument_id, SHORT)
@@ -435,7 +452,11 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                          curr_return])  # 收益
                     position.update_position(instrument_id=instrument_id, long_short=LONG, price=_fill_price,
                                              timestamp=_update_time, vol=_fill_lot, order_type=SHORT_CLOSE)
-                    account.update_fee(fee_lst[1] * _fill_lot)
+                    # account.update_account(fee_lst[1] * _fill_lot)
+                    curr_margin = position.get_live_margin(margin_ratio, multiplier)
+                    _fee, _margin, _live_risk = account.update_account(fee_lst[0] * _fill_lot, curr_margin)
+                    max_margin = max(max_margin, _margin)
+                    max_risk_ratio = max(max_risk_ratio, _live_risk)
         else:  # NO_SIGNAL
             pass
 
@@ -478,10 +499,14 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                      close_timestamp,  # 平仓时间
                      holding_time,  # 持有时间
                      _return])  # 持有收益
-                account.update_fee(fee_lst[1] * item[-1])
+                # account.update_account(fee_lst[1] * item[-1])
                 position.update_position(instrument_id=instrument_id, long_short=define.SHORT, price=close_price,
                                          timestamp=close_timestamp,
                                          vol=item[-1], order_type=define.LONG_CLOSE)
+                curr_margin = position.get_live_margin(margin_ratio, multiplier)
+                _fee, _margin, _live_risk = account.update_account(fee_lst[1] * item[-1], curr_margin)
+                max_margin = max(max_margin, _margin)
+                max_risk_ratio = max(max_risk_ratio, _live_risk)
             else:
 
                 dt_curr_time = datetime.strptime(close_timestamp.split('.')[0], '%Y-%m-%d %H:%M:%S')
@@ -511,15 +536,20 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                      close_timestamp,  # 平仓时间
                      holding_time,  # 持有时间
                      _return])  # 持有收益
-                account.update_fee(fee_lst[1] * item[-1])
+                # account.update_account(fee_lst[1] * item[-1])
                 position.update_position(instrument_id=instrument_id, long_short=define.LONG, price=close_price,
                                          timestamp=close_timestamp,
                                          vol=item[-1], order_type=define.SHORT_CLOSE)
+                curr_margin = position.get_live_margin(margin_ratio, multiplier)
+                _fee, _margin, _live_risk = account.update_account(fee_lst[1] * item[-1], curr_margin)
+                max_margin = max(max_margin, _margin)
+                max_risk_ratio = max(max_risk_ratio, _live_risk)
+
     # 结果统计
     long_open, short_open, correct_long_open, wrong_long_open, correct_short_open, wrong_short_open = 0, 0, 0, 0, 0, 0
     total_holding_time = 0.0
-    max_holding_time = -np.inf
-    min_holding_time = np.inf
+    max_holding_time = 0
+    min_holding_time = 100000  # 比一整天的总秒数大
     for item in account.transaction:
         if item[2] == 'long_open':
             long_open += 1
@@ -555,18 +585,18 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     print("min_holding_time:", min_holding_time)
     print("******************back test models for date:{0}*********************".format(trade_date))
 
-    _backtest_path = os.path.join(_base_dir, 'data\\backtest\\backtest_{0}.csv'.format(product_id))
-    try:
-        result_df = pd.read_csv(_backtest_path)
-    except Exception as ex:
-        result_df = pd.DataFrame(
-            {'trade_date': [], 'product_id': [], 'instrument_id': [], 'total_return_final': [],
-             'total_return_unclose': [],
-             'total_fee': [],
-             'unclosed_value': [], 'precision': [], 'long_open': [], 'short_open': [],
-             'correct_long_open': [], 'wrong_long_open': [], 'correct_short_open': [], 'wrong_short_open': [],
-             'average_holding_time': [], 'max_holding_time': [], 'min_holding_time': []
-             })
+    # _backtest_path = os.path.join(_base_dir, 'data\\backtest\\backtest_{0}.csv'.format(product_id))
+    # try:
+    #     result_df = pd.read_csv(_backtest_path)
+    # except Exception as ex:
+    #     result_df = pd.DataFrame(
+    #         {'trade_date': [], 'product_id': [], 'instrument_id': [], 'total_return_final': [],
+    #          'total_return_unclose': [],
+    #          'total_fee': [],
+    #          'unclosed_value': [], 'precision': [], 'long_open': [], 'short_open': [],
+    #          'correct_long_open': [], 'wrong_long_open': [], 'correct_short_open': [], 'wrong_short_open': [],
+    #          'average_holding_time': [], 'max_holding_time': [], 'min_holding_time': []
+    #          })
     new_df = pd.DataFrame([{'trade_date': trade_date, 'product_id': product_id, 'instrument_id': instrument_id,
                             'total_return_final': total_return, 'total_return_unclose': total_return_risk,
                             'total_fee': account.fee,
@@ -574,10 +604,11 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
                             'long_open': long_open, 'short_open': short_open, 'correct_long_open': correct_long_open,
                             'wrong_long_open': wrong_long_open, 'correct_short_open': correct_short_open,
                             'wrong_short_open': wrong_short_open, 'average_holding_time': average_holding_time,
-                            'max_holding_time': max_holding_time, 'min_holding_time': min_holding_time
+                            'max_holding_time': max_holding_time, 'min_holding_time': min_holding_time,
+                            'max_margin': max_margin, 'max_risk_ratio': max_risk_ratio
                             }])
     result_df = pd.concat([result_df, new_df])
-    result_df.to_csv(_backtest_path, index=False)
+    # result_df.to_csv(_backtest_path, index=False)
 
     # 画图，开平仓信号，问题处理一下
     # if plot_mkt:
@@ -603,8 +634,8 @@ def backtest_quick(data_fetcher: DataFetcher = None, product_id: str = 'rb', tra
     #     ax2 = ax1.twinx()
     #     ax2.plot(_idx_lst[define.PLT_START:define.PLT_END], factor.trend_short[define.PLT_START:define.PLT_END], 'r')
     #     plt.show()
-    ret = (total_return, account.fee, precision, account.transaction)
-    return ret
+    # ret = (total_return, account.fee, precision, account.transaction)
+    return result_df, account.transaction
 
 
 if __name__ == '__main__':

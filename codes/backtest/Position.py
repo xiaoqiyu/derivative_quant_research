@@ -43,7 +43,7 @@ class Position(object):
                     update_lst.append(item)
                 elif _direction == define.LONG and order_type == define.LONG_CLOSE:
                     assert _vol >= vol
-                    if _vol == vol:#该持仓完全平仓，不用再维护该持仓记录
+                    if _vol == vol:  # 该持仓完全平仓，不用再维护该持仓记录
                         continue
                     item[1] = 0.0 if _vol == vol else (_price * _vol - price * vol) / (_vol - vol)
                     item[2] = timestamp
@@ -57,7 +57,7 @@ class Position(object):
                     update_lst.append(item)
                 elif _direction == define.SHORT and order_type == define.SHORT_CLOSE:
                     assert _vol >= vol
-                    if _vol == vol:#该持仓完全平仓，不用再维护该持仓记录
+                    if _vol == vol:  # 该持仓完全平仓，不用再维护该持仓记录
                         continue
                     item[1] = 0.0 if _vol == vol else (_price * _vol - price * vol) / (_vol - vol)
                     item[2] = timestamp
@@ -83,3 +83,11 @@ class Position(object):
                 if item[0] == side:
                     return item
         return
+
+    def get_live_margin(self, margin_ratio, multiplier):
+        # _direction, _price, _ts, _vol = item
+        total_margin = 0
+        for _, _lst in self.position.items():
+            for item in _lst:
+                total_margin += item[1] * item[-1] * multiplier * margin_ratio / 100
+        return total_margin

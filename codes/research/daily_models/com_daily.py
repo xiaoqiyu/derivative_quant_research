@@ -192,7 +192,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                             _fee = close_fee * vol
                             _val = (open_price - pre_close - tick_val) * vol * multiplier
                             _val1 = (open_price - pre_settle_price - tick_val) * vol * multiplier
-                            account.update_fee(_fee)
+                            account.update_account(_fee)
                             account.update_market_value(_val, _val1, _fee)
                             pos.update_position(instrument_id=product_id, long_short=define.SHORT, price=open_price,
                                                 timestamp='', vol=vol, order_type=define.LONG_CLOSE)
@@ -206,7 +206,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                             _val1 = chg1 * vol * multiplier
                             _val = _val if long_short == define.LONG else -_val
                             _val1 = _val1 if long_short == define.LONG else -_val1
-                            account.update_fee(_fee)
+                            account.update_account(_fee)
                             account.update_market_value(_val, _val1, _fee)
                             margin_val = settle_price * vol * multiplier * margin_num / 100
                             pos_vol = vol
@@ -220,7 +220,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                             _fee = close_fee * vol
                             _val = (pre_close - open_price - tick_val) * vol * multiplier
                             _val1 = (pre_settle_price - open_price - tick_val) * vol * multiplier
-                            account.update_fee(_fee)
+                            account.update_account(_fee)
                             account.update_market_value(_val, _val1, _fee)
                             pos.update_position(instrument_id=product_id, long_short=define.LONG, price=open_price,
                                                 timestamp='', vol=vol, order_type=define.SHORT_CLOSE)
@@ -233,7 +233,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                             _val1 = chg1 * vol * multiplier
                             _val = _val if long_short == define.LONG else -_val
                             _val1 = _val1 if long_short == define.LONG else -_val1
-                            account.update_fee(_fee)
+                            account.update_account(_fee)
                             account.update_market_value(_val, _val1, _fee)
                             margin_val = settle_price * vol * multiplier * margin_num / 100
                             pos_vol = -vol
@@ -243,7 +243,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                     _fee = close_fee * vol
                     _val = (open_price - pre_close - tick_val) * vol * multiplier
                     _val1 = (open_price - pre_settle_price - tick_val) * vol * multiplier
-                    account.update_fee(_fee)
+                    account.update_account(_fee)
                     account.update_market_value(_val, _val1, _fee)
                     pos.update_position(instrument_id=product_id, long_short=define.SHORT, price=open_price,
                                         timestamp='', vol=vol, order_type=define.LONG_CLOSE)
@@ -256,7 +256,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                     _fee = close_fee * vol
                     _val = (pre_close - open_price - tick_val) * vol * multiplier
                     _val1 = (pre_settle_price - open_price - tick_val) * vol * multiplier
-                    account.update_fee(_fee)
+                    account.update_account(_fee)
                     account.update_market_value(_val, _val1, _fee)
                     pos.update_position(instrument_id=product_id, long_short=define.LONG, price=open_price,
                                         timestamp='', vol=vol, order_type=define.SHORT_CLOSE)
@@ -275,7 +275,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                                close_price - open_price - tick_val) * order_vol * multiplier  # assume open price is open_price - 1tick
                 _val1 = (
                                 settle_price - open_price - tick_val) * order_vol * multiplier  # assume open price is open_price - 1tick
-                account.update_fee(_fee)
+                account.update_account(_fee)
                 account.update_market_value(_val, _val1, _fee)
                 pos.update_position(instrument_id=product_id, long_short=define.LONG, price=open_price + tick_val,
                                     timestamp='',
@@ -291,7 +291,7 @@ def handle_bar(signal_df: pd.DataFrame, strategy_option: dict, strategy_name: st
                                open_price - close_price - tick_val) * order_vol * multiplier  # assume open price is open_price - 1tick
                 _val1 = (
                                 open_price - settle_price - tick_val) * order_vol * multiplier  # assume open price is open_price - 1tick
-                account.update_fee(_fee)
+                account.update_account(_fee)
                 account.update_market_value(_val, _val1, _fee)
 
                 pos.update_position(instrument_id=product_id, long_short=define.SHORT, price=open_price - tick_val,

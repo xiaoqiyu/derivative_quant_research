@@ -228,6 +228,7 @@ if __name__ == '__main__':
             print('-' * 80)
             print('| end of epoch {:3d} | time: {:5.2f}s'.format(epoch, (time.time() - epoch_start_time)))
             print('-' * 80)
+
         scheduler.step()
 
         # test the model

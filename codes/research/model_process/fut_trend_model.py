@@ -46,7 +46,7 @@ class ParamModel(object):
 
     def update_model(self, std_model=None, bins=None):
         if std_model is not None:
-            logger.info("update param model with var:{0}, means_{1}".format(std_model.var_, std_model.mean_))
+            # logger.info("update param model with var:{0}, means_{1}".format(std_model.var_, std_model.mean_))
             self.std_model = std_model
         if bins is not None:
             logger.info("update param model with bins:{0}".format(bins))
@@ -143,8 +143,6 @@ class RNNModel(object):
                                           'data\models\\tsmodels\\{0}_{1}.pt'.format(self.model_name, product_id))
         min_val_loss = np.inf
         first_model = True
-        # in one epoch not load checkpoint
-        # if not train_base:  # incremental training when there is already a base model
         EPOCH = 50
         learning_rate_gamma = 0.1
         if os.path.exists(_rnn_model_path):
@@ -167,8 +165,8 @@ class RNNModel(object):
         mult_step_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                                    milestones=[EPOCH // 2, EPOCH // 4 * 3],
                                                                    gamma=learning_rate_gamma)
-        train_loss = []
-        val_loss = []
+        train_loss = []  # 每次epoch(有valid的epoch)
+        val_loss = []  # 每次epoch(有valid的epoch)
         # min_test_loss = cache_test_loss
         # min_test_loss = np.inf if train_base else cache_test_loss
         _param_model_path = os.path.join(_base_dir, 'data\models\\tsmodels\\tsmodels_{0}.pkl'.format(product_id))
@@ -189,14 +187,14 @@ class RNNModel(object):
             "Get dataloader for train:{0}-{1}, valid:{2}-{3}".format(start_date, _train_end_date, _val_start_date,
                                                                      end_date))
         train_data_loader, val_data_loader = gen_train_test_features(data_fetcher=self.data_fetcher,
-                                                                      param_model=param_model,
-                                                                      product_id=product_id,
-                                                                      freq="{0}S".format(SEC_INTERVAL),
-                                                                      missing_threshold=MISSING_THRESHOLD,
-                                                                      train_start_date=start_date,
-                                                                      train_end_date=_train_end_date,
-                                                                      test_start_date=_val_start_date,
-                                                                      test_end_date=end_date)
+                                                                     param_model=param_model,
+                                                                     product_id=product_id,
+                                                                     freq="{0}S".format(SEC_INTERVAL),
+                                                                     missing_threshold=MISSING_THRESHOLD,
+                                                                     train_start_date=start_date,
+                                                                     train_end_date=_train_end_date,
+                                                                     test_start_date=_val_start_date,
+                                                                     test_end_date=end_date)
         logger.info('train data loader size:{0},val data loader size:{1}'.format(train_data_loader.dataset.size(),
                                                                                  val_data_loader.dataset.size()))
 
@@ -222,15 +220,16 @@ class RNNModel(object):
                 nn.utils.clip_grad_norm_(rnn.parameters(), max_norm=10, norm_type=2)
                 optimizer.step()  # apply gradients
                 total_train_loss.append(loss.item())
-            train_loss.append(np.mean(total_train_loss))  # 存入平均交叉熵
+            # 存入平均交叉熵
 
             if i % 10 != 0:
                 continue
-            step_val_loss = []
+            # step_val_loss = []
+            train_loss.append(np.mean(total_train_loss))
             rnn.eval()  # 进入样本外测试模式
 
-            curr_val_predicts = []
-            curr_val_label = []
+            curr_val_predicts = []  # 每次valid
+            curr_val_label = []  # 每次valid
             with torch.no_grad():
                 prediction = rnn(val_data_loader.dataset[:, :, :-1])
                 val_predicts_epoch = rnn.predict(val_data_loader.dataset[:, :, :-1])
@@ -238,7 +237,9 @@ class RNNModel(object):
                 val_labels_epoch = val_labels_epoch.type(torch.long).to(device)
                 if prediction.size()[0] == val_labels_epoch.size()[0]:
                     loss = loss_func(prediction, val_labels_epoch)  # calculate loss
-                    step_val_loss.append(loss.item())
+                    _val_loss = loss.item()
+                    # step_val_loss.append(loss.item())
+                    val_loss.append(_val_loss)
                 else:
                     logger.warn(
                         "predict:{0} and y label:{1} not the same len".format(len(val_predicts), len(val_labels)))
@@ -265,40 +266,39 @@ class RNNModel(object):
             _acc2 = round(float(_correct_num2 / pred_2), 2) if pred_2 else 0.0
             _train_loss = round(float(np.mean(total_train_loss)), 4)
             _acc = round(float(_correct_num / len(curr_val_predicts)), 4)
-            curr_epoch_val_loss = round(float(np.mean(step_val_loss)), 4)
-            val_loss.append(curr_epoch_val_loss)
+            # curr_epoch_val_loss = round(float(np.mean(step_val_loss)), 4)
+            # val_loss.append(curr_epoch_val_loss)
             logger.info(
                 "Epoch:{0},true 0/1/2:({1}/{2}/{3}),pred 0/1/2:({4}/{5}/{6}),acc 0/1/2:({7}/{8}/{9}),train loss:{10}, "
                 "valid loss:{11}, acc:{12},learning rate:{13}".format(
                     i, true_0, true_1, true_2,
-                    pred_0, pred_1, pred_2, _acc0, _acc1, _acc2, _train_loss, curr_epoch_val_loss, _acc,
+                    pred_0, pred_1, pred_2, _acc0, _acc1, _acc2, _train_loss, _val_loss, _acc,
                     mult_step_scheduler.get_lr()))
             # TODO remove hardcode, save model(parameter) for better valid loss and accuracy > 0.5
-            # if first_model or (val_loss and curr_epoch_val_loss < min_val_loss and _acc > 0.5):
-            if first_model or (val_loss and curr_epoch_val_loss < min_val_loss and _acc > 0.3):
+            if first_model or (_val_loss < min_val_loss and _acc > 0.3):
                 logger.info("Epoch:{0} Save model with val_loss:{1} and prev val loss:{2}, accu:{3}".format(i,
-                                                                                                            curr_epoch_val_loss,
+                                                                                                            _val_loss,
                                                                                                             min_val_loss,
                                                                                                             _acc))
-                min_val_loss = curr_epoch_val_loss
+                min_val_loss = _val_loss
                 # self.save_torch_checkpoint(i, rnn, optimizer, train_loss, min_test_loss, _rnn_model_path)
                 self.save_model(i, rnn, optimizer, train_loss, min_val_loss, _rnn_model_path)
                 self.save_model(i, rnn, optimizer, train_loss, min_val_loss, _rnn_model_path_pt)
 
             # logger.info('Epoch: {0}, Current learning rate: {1}'.format(i, mult_step_scheduler.get_lr()))
             mult_step_scheduler.step()  # 学习率更新
-        df_predict = pd.DataFrame({'y_true': val_labels, 'y_predict': val_predicts, 'epoch': val_epoch})
-        predict_path = os.path.join(_base_dir,
-                                    'data\models\\tsmodels\\{0}_predict_{1}.csv'.format(self.model_name, product_id))
-
-        df_predict.to_csv(predict_path, index=False)
+        # df_predict = pd.DataFrame({'y_true': val_labels, 'y_predict': val_predicts, 'epoch': val_epoch})
+        # predict_path = os.path.join(_base_dir,
+        #                             'data\models\\tsmodels\\{0}_predict_{1}.csv'.format(self.model_name, product_id))
+        #
+        # df_predict.to_csv(predict_path, index=False)
 
         # TODO  not plot for results
         plt.plot(train_loss, color='r')
         plt.plot(val_loss, color='b')
         plt.legend(['train_loss', 'val_loss'])
         train_loss_track_path = os.path.join(_base_dir,
-                                             'data\models\\tsmodels\\{0}_train_loss_{1}_{2}_{3}'.format(
+                                             'data\models\\tsmodels\\{0}_train_loss_{1}_{2}_{3}.jpg'.format(
                                                  self.model_name,
                                                  product_id, start_date, end_date))
         logger.info(
@@ -395,8 +395,7 @@ def train_all(model_name='rnn', product_id='rb', start_date='2021-07-01', end_da
               train_base=True):
     if model_name == 'rnn':
         ts_model = RNNModel(data_fetcher)
-        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date, train_end_date='',
-                             train_base=True)
+        ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date, train_end_date='')
 
 
 def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2021-07-01', end_date='2021-07-15',
@@ -404,7 +403,7 @@ def incremental_train_and_infer(model_name='rnn', product_id='rb', start_date='2
     if model_name == 'rnn':
         ts_model = RNNModel(data_fetcher)
         ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date,
-                             train_end_date=train_end_date, train_base=False)
+                             train_end_date=train_end_date)
         logger.info("start infer from {0} to {1}".format(infer_start_date, end_date))
         test_model(product_id=product_id, start_date=infer_start_date, end_date=end_date)
 

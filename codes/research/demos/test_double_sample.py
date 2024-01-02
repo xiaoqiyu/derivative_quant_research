@@ -8,17 +8,15 @@
 
 import statsmodels.api as sm
 import numpy as np
-data = sm.datasets.get_rdataset("Duncan","carData")
+
+data = sm.datasets.get_rdataset("Duncan", "carData")
 y = data.data['income']
-y = np.vstack([y,y]).reshape(-1, 1)
-x= data.data['education']
-x=np.vstack([x,x]).reshape(-1,1)
-x=sm.add_constant(x)
+y = np.vstack([y, y]).reshape(-1, 1)
+x = data.data['education']
+x = np.vstack([x, x]).reshape(-1, 1)
+x = sm.add_constant(x)
 
 print(x.size, y.size)
-model=sm.OLS(y,x)
-ret=model.fit()
+model = sm.OLS(y, x)
+ret = model.fit()
 print(ret.summary())
-
-
-

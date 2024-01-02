@@ -68,7 +68,7 @@ def model_evaluation_v0(start_date='2021-03-01', end_date='2021-12-31', infer_we
                                     train_end_date=train_end_date, infer_start_date=infer_start_date)
 
 
-def model_evaluation(start_date='2021-01-04', end_date='2021-06-30', infer_weeks=6, product_id='m',
+def model_evaluation(start_date='2021-01-04', end_date='2021-06-30', infer_weeks=6, product_id='rb',
                      model_name='rnn'):
     # incremental training
     week_start_end = data_fetcher.get_week_start_end(start_date=start_date, end_date=end_date)
@@ -104,6 +104,18 @@ def model_evaluation(start_date='2021-01-04', end_date='2021-06-30', infer_weeks
     #                                 train_end_date=train_end_date, infer_start_date=infer_start_date)
 
 
+def model_evaluation_without_cv(start_date, end_date, product_id):
+    week_start_end = data_fetcher.get_week_start_end(start_date=start_date, end_date=end_date)
+    week_num = len(week_start_end)
+    train_week_num = int(week_num * 0.8)
+
+    ts_model = RNNModel(data_fetcher)
+    ts_model.train_model(product_id=product_id, start_date=start_date, end_date=end_date,
+                         train_end_date=week_start_end[train_week_num - 1][-1])
+    # test_model(product_id=product_id, start_date=test_start_date, end_date=test_end_date)
+
+
 if __name__ == '__main__':
     # feature_evalution()
-    model_evaluation()
+    # model_evaluation()
+    model_evaluation_without_cv(start_date='2021-01-04', end_date='2021-06-30', product_id='rb')

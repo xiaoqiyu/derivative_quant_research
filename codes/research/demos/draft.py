@@ -9,6 +9,9 @@
 import re
 
 ret = re.findall(r'\w{3}', 'ab12|adb')
+import matplotlib.pyplot as plt
+plt.sa
+
 print(ret)
 
 import pandas as pd
